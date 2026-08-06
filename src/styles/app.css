@@ -1,0 +1,109 @@
+/* App-level helpers. Mirrors the <helmet> <style> block of the source
+   prototype (Family Expense Tracker.dc.html) plus the page shell around
+   the device frame. Everything here reads from Organic's tokens. */
+
+::-webkit-scrollbar { width: 0; height: 0 }
+
+.om-row { display: flex; align-items: center }
+
+.om-bar-track {
+  width: 100%;
+  background: var(--color-neutral-200);
+  border-radius: 999px;
+  overflow: hidden;
+  height: 8px;
+}
+.om-bar-fill { height: 100%; border-radius: 999px }
+
+/* — page shell — */
+.om-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: var(--space-8) var(--space-6);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  font-family: var(--font-body);
+}
+.om-page-intro {
+  text-align: center;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.om-page-intro h1 { font-size: 24px; margin: 0 }
+.om-page-intro p {
+  margin: 0;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+.om-page-foot {
+  max-width: 402px;
+  font-size: 11.5px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  text-align: center;
+}
+
+/* — in-device chrome — */
+.om-screen { flex: 1; overflow-y: auto; padding: 60px var(--space-4) 100px }
+.om-sheet {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 60px var(--space-4) 30px;
+  overflow-y: auto;
+}
+.om-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.om-sheet-head h3 { margin: 0; font-size: 16px }
+.om-sheet-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-accent-700);
+}
+.om-sheet-action:hover { text-decoration: underline }
+.om-sheet-action-strong { font-weight: 700 }
+.om-sheet-spacer { width: 44px }
+
+.om-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  margin-bottom: 6px;
+}
+
+.om-tabbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px var(--space-2) 26px;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--color-divider);
+  display: flex;
+  gap: 2px;
+}
+.om-tabbar button {
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: inherit;
+}
+.om-tabbar span { font-size: 9.5px }
