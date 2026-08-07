@@ -1,5 +1,5 @@
 import { SMS_CATEGORY_CHOICES, catMeta } from '../data/seed.js';
-import { inr, muted } from '../lib/format.js';
+import { muted } from '../lib/format.js';
 import { Seg } from '../components/ui.jsx';
 
 export default function SmsScreen({ t }) {
@@ -26,17 +26,44 @@ export default function SmsScreen({ t }) {
           }}>{current.raw}</div>
 
           <div className="card elev-sm" style={{ gap: 'var(--space-3)' }}>
-            <div className="om-row" style={{ justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{current.merchant}</div>
-                <div style={{ fontSize: 11, color: muted(55) }}>{current.account}</div>
+            <div className="om-row" style={{ justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <input
+                  className="input"
+                  value={current.merchant}
+                  onChange={(e) => t.updateSmsItem(index, { merchant: e.target.value })}
+                  aria-label="Merchant"
+                  style={{ fontSize: 15, fontWeight: 700, border: 'none', background: 'transparent', padding: '2px 0', minHeight: 'auto' }}
+                />
+                <div style={{ fontSize: 11, color: muted(55) }}>{t.personalizeAccount(current.account)}</div>
               </div>
-              <div style={{ fontFamily: 'var(--font-heading)', fontSize: 20 }}>{inr(current.amount)}</div>
+              <input
+                type="number"
+                className="input"
+                value={current.amount}
+                onChange={(e) => t.updateSmsItem(index, { amount: parseFloat(e.target.value) || 0 })}
+                aria-label="Amount"
+                style={{
+                  width: 96, flexShrink: 0, fontFamily: 'var(--font-heading)', fontSize: 20, textAlign: 'right',
+                  border: 'none', background: 'transparent', padding: '2px 0', minHeight: 'auto',
+                }}
+              />
             </div>
 
             <div className="hr" style={{ margin: 0 }} />
 
-            <div className="om-eyebrow" style={{ marginBottom: 0 }}>Category</div>
+            <div className="om-eyebrow" style={{ marginBottom: 0 }}>Type</div>
+            <Seg
+              name="smsType"
+              value={current.type || 'expense'}
+              onChange={(v) => t.updateSmsItem(index, { type: v })}
+              options={[
+                { value: 'expense', label: 'Money out' },
+                { value: 'income', label: 'Money in' },
+              ]}
+            />
+
+            <div className="om-eyebrow" style={{ marginTop: 4, marginBottom: 0 }}>Category</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {SMS_CATEGORY_CHOICES.map((name) => {
                 const m = catMeta(name);
@@ -65,7 +92,7 @@ export default function SmsScreen({ t }) {
               onChange={(v) => t.updateSmsItem(index, { person: v })}
               options={[
                 { value: 'you', label: 'You' },
-                { value: 'priya', label: 'Priya' },
+                { value: 'priya', label: t.partnerName },
               ]}
             />
           </div>
@@ -78,6 +105,11 @@ export default function SmsScreen({ t }) {
       ) : (
         <div style={{ textAlign: 'center', padding: 'var(--space-8) 0', color: muted(55), fontSize: 13 }}>
           All caught up — no pending payments to review.
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <button type="button" className="btn btn-ghost" onClick={() => t.openScreen('import')}>
+              Import past messages
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -1,14 +1,6 @@
 import { muted } from '../lib/format.js';
 import { TxRow } from '../components/ui.jsx';
 
-const FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'you', label: 'You' },
-  { key: 'priya', label: 'Priya' },
-  { key: 'auto', label: 'Auto' },
-  { key: 'manual', label: 'Manual' },
-];
-
 const matches = (tx, filter) => {
   if (filter === 'all') return true;
   if (filter === 'you' || filter === 'priya') return tx.person === filter;
@@ -16,6 +8,14 @@ const matches = (tx, filter) => {
 };
 
 export default function TransactionsTab({ t }) {
+  const FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'you', label: 'You' },
+    { key: 'priya', label: t.partnerName },
+    { key: 'auto', label: 'Auto' },
+    { key: 'manual', label: 'Manual' },
+  ];
+
   const groups = t.txGroups
     .map((g) => ({ ...g, items: g.items.filter((tx) => matches(tx, t.txFilter)) }))
     .filter((g) => g.items.length > 0);

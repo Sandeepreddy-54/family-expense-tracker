@@ -54,3 +54,15 @@ export const forPerson = (totals, category, person) =>
 /** Month-to-date total across every category. */
 export const monthTotal = (totals, person) =>
   CATS.reduce((sum, c) => sum + forPerson(totals, c.name, person), 0);
+
+/**
+ * Actual combined spend for one calendar month (YYYY-MM), read straight off the
+ * transaction list — unlike categoryTotals this isn't blended with a seeded
+ * baseline, so it's only meaningful for months that have real transactions in
+ * them (e.g. backfilled via SMS import). Returns 0 when there's nothing yet.
+ */
+export function realMonthlyTotal(transactions, monthPrefix) {
+  return transactions
+    .filter((tx) => tx.type !== 'income' && tx.date.startsWith(monthPrefix))
+    .reduce((s, tx) => s + tx.amount, 0);
+}

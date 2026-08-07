@@ -14,6 +14,10 @@ import CardDetailScreen from './screens/CardDetailScreen.jsx';
 import BillsScreen from './screens/BillsScreen.jsx';
 import LoansScreen from './screens/LoansScreen.jsx';
 import ExportScreen from './screens/ExportScreen.jsx';
+import LoginScreen from './screens/LoginScreen.jsx';
+import EmisScreen from './screens/EmisScreen.jsx';
+import AddEmiScreen from './screens/AddEmiScreen.jsx';
+import ImportScreen from './screens/ImportScreen.jsx';
 
 const TABS = {
   home: HomeTab,
@@ -31,6 +35,9 @@ const SCREENS = {
   bills: BillsScreen,
   loans: LoansScreen,
   export: ExportScreen,
+  emis: EmisScreen,
+  addEmi: AddEmiScreen,
+  import: ImportScreen,
 };
 
 const ICONS = {
@@ -79,7 +86,7 @@ function TabBar({ t }) {
     <nav className="om-tabbar" aria-label="Main">
       <TabButton id="home" label="Home" active={t.tab === 'home'} onClick={() => t.setTab('home')} />
       <TabButton id="transactions" label="Activity" active={t.tab === 'transactions'} onClick={() => t.setTab('transactions')} />
-      <button type="button" onClick={() => t.openScreen('add')} aria-label="Add expense" style={{ justifyContent: 'center', marginTop: -18 }}>
+      <button type="button" onClick={() => t.openScreen('add')} aria-label="Add entry" style={{ justifyContent: 'center', marginTop: -18 }}>
         <div style={{
           width: 48, height: 48, borderRadius: 999, background: 'var(--color-accent)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)',
@@ -99,15 +106,20 @@ export default function App() {
   const t = useTracker();
   const Tab = TABS[t.tab] || HomeTab;
   const Screen = t.screen ? SCREENS[t.screen] : null;
+  const loggedIn = t.data.profile.loggedIn;
 
   return (
     <div className="om-page">
       <div className="om-page-intro">
         <h1>Family Expense Tracker</h1>
         <p>
-          One shared app for both of you — Rohan's Android reads payment SMS directly; Priya's iPhone
-          forwards bank texts in (Settings has both). Every expense is tagged by person so you can see
-          combined or individual spend anywhere.
+          {loggedIn
+            ? `One shared app for both of you — Android reads payment SMS directly; iPhone forwards bank texts in
+               (Settings has both). Every expense is tagged by person so ${t.youName} and ${t.partnerName} can see
+               combined or individual spend anywhere.`
+            : `One shared app for both of you — Android reads payment SMS directly; iPhone forwards bank texts in
+               (Settings has both). Every expense is tagged by person so you can see combined or individual spend
+               anywhere.`}
         </p>
       </div>
 
@@ -117,7 +129,9 @@ export default function App() {
           background: 'var(--color-bg)', color: 'var(--color-text)',
           position: 'relative', fontFamily: 'var(--font-body)',
         }}>
-          {Screen ? (
+          {!loggedIn ? (
+            <LoginScreen t={t} />
+          ) : Screen ? (
             <Screen t={t} />
           ) : (
             <>

@@ -89,7 +89,7 @@ function BudgetRow({ b, t }) {
 
       <Bar pct={b.pct} color={b.pct > 100 ? 'var(--color-accent-700)' : b.bg2} />
       <div style={{ fontSize: 10.5, color: muted(50), marginTop: 3 }}>
-        You {inr(b.you)} · Priya {inr(b.priya)}
+        You {inr(b.you)} · {t.partnerName} {inr(b.priya)}
       </div>
     </div>
   );

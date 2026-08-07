@@ -1,11 +1,13 @@
 import { inr, muted } from '../lib/format.js';
-import { Badge, SheetHeader } from '../components/ui.jsx';
+import { Badge, Bar, SheetHeader } from '../components/ui.jsx';
 
 export default function CardDetailScreen({ t }) {
   const card = t.detailCard;
   if (!card) return null;
 
   const cardTx = t.transactions.filter((tx) => tx.account === card.name);
+  const cardEmis = t.emis.filter((e) => e.cardId === card.id);
+  const cardMonthlyEmi = cardEmis.filter((e) => !e.completed).reduce((s, e) => s + e.emiAmount, 0);
 
   return (
     <div className="om-sheet">
@@ -46,6 +48,38 @@ export default function CardDetailScreen({ t }) {
       <button type="button" className="btn btn-primary btn-block" style={{ marginTop: 'var(--space-4)' }} disabled title="Payments are not wired up in this build">
         Pay now
       </button>
+
+      <div className="om-row" style={{ justifyContent: 'space-between', margin: 'var(--space-5) 0 6px' }}>
+        <div className="om-eyebrow" style={{ marginBottom: 0 }}>
+          EMIs on this card{cardMonthlyEmi > 0 ? ` · ${inr(cardMonthlyEmi)}/mo` : ''}
+        </div>
+        <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12 }} onClick={() => t.openAddEmi(card.id, 'cardDetail')}>
+          + Add EMI
+        </button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+        {cardEmis.length === 0 && (
+          <div style={{ fontSize: 12.5, color: muted(55) }}>No EMIs on this card yet.</div>
+        )}
+        {cardEmis.map((e) => (
+          <div key={e.id} className="card elev-sm" style={{ gap: 6 }}>
+            <div className="om-row" style={{ justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{e.item}</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{e.emiAmountLabel}</span>
+            </div>
+            <Bar pct={e.pct} color={e.completed ? 'var(--color-accent-2-500)' : 'var(--color-accent-500)'} />
+            <div className="om-row" style={{ justifyContent: 'space-between', fontSize: 11, color: e.dueColor || muted(55) }}>
+              <span>{e.completed ? 'Completed' : `${e.pendingMonths} of ${e.tenureMonths} left`}</span>
+              <span>{e.completed ? `Ended ${e.endDateLabel}` : `Next ${e.nextDueLabel}`}</span>
+            </div>
+            {!e.completed && (
+              <button type="button" onClick={() => t.markEmiPaid(e.id)} className="btn btn-secondary" style={{ marginTop: 2 }}>
+                Mark this month paid
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
 
       <div className="om-eyebrow" style={{ margin: 'var(--space-5) 0 6px' }}>Transactions on this card</div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>

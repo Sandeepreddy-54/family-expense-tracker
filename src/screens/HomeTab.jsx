@@ -1,19 +1,35 @@
 import {
   CATS, HEATMAP_COLORS, HEATMAP_SEED, MONTH_HISTORY, NET_WORTH,
 } from '../data/seed.js';
-import { forPerson } from '../lib/totals.js';
+import { forPerson, realMonthlyTotal } from '../lib/totals.js';
 import { inr, muted } from '../lib/format.js';
 import { Badge, Bar, Chevron, SectionHeading, Seg } from '../components/ui.jsx';
 
 function Hero({ t }) {
+  const netUp = t.netTotal >= 0;
   return (
-    <div className="card elev-md" style={{ background: 'var(--color-accent)', color: 'var(--color-bg)', gap: 'var(--space-2)' }}>
-      <div className="card-kicker" style={{ color: 'color-mix(in srgb, var(--color-bg) 80%, transparent)' }}>
-        This month · {t.personLabel}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+      <div className="card elev-md" style={{ background: 'var(--color-accent)', color: 'var(--color-bg)', gap: 'var(--space-2)' }}>
+        <div className="card-kicker" style={{ color: 'color-mix(in srgb, var(--color-bg) 80%, transparent)' }}>
+          Money out · This month · {t.personLabel}
+        </div>
+        <div style={{ fontFamily: 'var(--font-heading)', fontSize: 34, lineHeight: 1.1 }}>{inr(t.heroTotal)}</div>
+        <div style={{ fontSize: 12, opacity: 0.9 }}>
+          {(t.trendPct >= 0 ? '▲ ' : '▼ ') + Math.abs(t.trendPct)}% vs last month
+        </div>
       </div>
-      <div style={{ fontFamily: 'var(--font-heading)', fontSize: 34, lineHeight: 1.1 }}>{inr(t.heroTotal)}</div>
-      <div style={{ fontSize: 12, opacity: 0.9 }}>
-        {(t.trendPct >= 0 ? '▲ ' : '▼ ') + Math.abs(t.trendPct)}% vs last month
+
+      <div className="om-row" style={{ gap: 'var(--space-2)' }}>
+        <div className="card elev-sm" style={{ flex: 1, gap: 2 }}>
+          <div className="card-kicker" style={{ color: 'var(--color-accent-2-700)' }}>Money in</div>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: 'var(--color-accent-2-700)' }}>{inr(t.incomeTotal)}</div>
+        </div>
+        <div className="card elev-sm" style={{ flex: 1, gap: 2 }}>
+          <div className="card-kicker">Net</div>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: netUp ? 'var(--color-accent-2-700)' : 'var(--color-accent-700)' }}>
+            {netUp ? '+' : '−'}{inr(Math.abs(t.netTotal))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -158,11 +174,14 @@ function Trends({ t }) {
     .sort((a, b) => b.amount - a.amount);
   const catMax = Math.max(...categories.map((c) => c.amount), 1);
 
-  // Historical months are seeded; the current month is live.
-  const months = MONTH_HISTORY.map((m) => ({
-    label: m.label,
-    amount: m.amount ?? t.overallSpent,
-  }));
+  // Historical months start out seeded, but as soon as real transactions exist
+  // for one (e.g. backfilled via SMS import) that real total takes over; the
+  // current month is always live.
+  const months = MONTH_HISTORY.map((m) => {
+    if (m.amount == null) return { label: m.label, amount: t.overallSpent };
+    const real = realMonthlyTotal(t.data.transactions, m.month);
+    return { label: m.label, amount: real > 0 ? real : m.amount };
+  });
   const monthMax = Math.max(...months.map((m) => m.amount), 1);
 
   const { savings, fds, cardDebt, goalSaved, goalTarget } = NET_WORTH;
@@ -232,7 +251,7 @@ function Trends({ t }) {
 }
 
 export default function HomeTab({ t }) {
-  const greetingName = t.data.currentUser === 'you' ? 'Rohan' : 'Priya';
+  const greetingName = t.data.currentUser === 'you' ? t.youName : t.partnerName;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -268,7 +287,7 @@ export default function HomeTab({ t }) {
         options={[
           { value: 'combined', label: 'Combined' },
           { value: 'you', label: 'You' },
-          { value: 'priya', label: 'Priya' },
+          { value: 'priya', label: t.partnerName },
         ]}
       />
 

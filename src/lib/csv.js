@@ -10,8 +10,9 @@ const row = (cells) => cells.map(esc).join(',');
  * Build the export the design promises: "all transactions, budgets, and card
  * summaries — combined and per person — as a CSV".
  */
-export function buildCsv({ transactions, budgets, cards, totals, range, label }) {
+export function buildCsv({ transactions, budgets, cards, totals, range, label, youName = 'You', partnerName = 'Partner' }) {
   const lines = [];
+  const personalizeAccount = (name) => name.replace('Rohan', youName).replace('Priya', partnerName);
 
   lines.push(row(['Family Expense Tracker export']));
   lines.push(row(['Period', label]));
@@ -26,8 +27,8 @@ export function buildCsv({ transactions, budgets, cards, totals, range, label })
       tx.date,
       tx.merchant,
       tx.category,
-      tx.person === 'you' ? 'Rohan' : 'Priya',
-      tx.account,
+      tx.person === 'you' ? youName : partnerName,
+      personalizeAccount(tx.account),
       tx.source === 'auto' ? 'Auto' : 'Manual',
       tx.type === 'income' ? 'Income' : 'Expense',
       tx.amount,
@@ -36,7 +37,7 @@ export function buildCsv({ transactions, budgets, cards, totals, range, label })
   lines.push('');
 
   lines.push(row(['CATEGORY TOTALS (month to date)']));
-  lines.push(row(['Category', 'Combined (INR)', 'Rohan (INR)', 'Priya (INR)', 'Budget (INR)', 'Used %']));
+  lines.push(row(['Category', 'Combined (INR)', `${youName} (INR)`, `${partnerName} (INR)`, 'Budget (INR)', 'Used %']));
   CATS.forEach((c) => {
     const t = totals[c.name];
     const b = budgets.find((x) => x.category === c.name);

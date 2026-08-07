@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  BILLS_INITIAL, BUDGETS_DATA, CARDS_DATA, DEFAULT_OVERALL_BUDGET,
-  DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, NOTIFS_HISTORICAL, SMS_INITIAL,
+  BILLS_INITIAL, BUDGETS_DATA, CARD_EMIS_INITIAL, CARDS_DATA, DEFAULT_OVERALL_BUDGET,
+  DEFAULT_PROFILE, DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, NOTIFS_HISTORICAL, SMS_INITIAL,
   TODAY, TODAY_ISO, TX_INITIAL, catMeta,
 } from '../data/seed.js';
 import { categoryTotals, monthTotal } from '../lib/totals.js';
 import { daysUntil, inr, muted, shortDate } from '../lib/format.js';
 import { byDateDesc, groupByDate } from '../lib/dates.js';
+import { deriveEmi } from '../lib/emi.js';
+import { parseSmsBatch } from '../lib/smsParser.js';
 
 const STORAGE_KEY = 'family-expense-tracker/v1';
 
@@ -15,10 +17,12 @@ const freshData = () => ({
   smsQueue: SMS_INITIAL,
   bills: BILLS_INITIAL,
   ious: IOU_INITIAL,
+  cardEmis: CARD_EMIS_INITIAL,
   budgetOverrides: {},
   overallBudget: DEFAULT_OVERALL_BUDGET,
   settings: DEFAULT_SETTINGS,
   currentUser: 'you',
+  profile: DEFAULT_PROFILE,
 });
 
 function loadData() {
@@ -52,9 +56,29 @@ export function useTracker() {
   const [txFilter, setTxFilter] = useState('all');
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [smsIndex, setSmsIndex] = useState(0);
+  const [emiCardId, setEmiCardId] = useState(null);
+  const [emiReturnScreen, setEmiReturnScreen] = useState('emis');
 
   const openScreen = useCallback((name) => setScreen(name), []);
   const closeScreen = useCallback(() => setScreen(null), []);
+  // Add EMI can be reached from the combined EMIs overview or from a single card's
+  // detail screen — remember which, so Save/Cancel return to the right place instead
+  // of falling all the way back to the tab bar (the app has no navigation stack).
+  const openAddEmi = useCallback((cardId, returnTo = 'emis') => {
+    setEmiCardId(cardId);
+    setEmiReturnScreen(returnTo);
+    setScreen('addEmi');
+  }, []);
+
+  // ── derived: identity ───────────────────────────────────────────────────────
+  // Seed data was written for a fixed demo household (Rohan + Priya); once someone
+  // logs in we display their real names everywhere instead.
+  const youName = data.profile.name.trim() || 'You';
+  const partnerName = data.profile.partnerName.trim() || 'Partner';
+  const personalizeAccount = useCallback(
+    (name) => name.replace('Rohan', youName).replace('Priya', partnerName),
+    [youName, partnerName],
+  );
 
   // ── derived: spend ─────────────────────────────────────────────────────────
   const totals = useMemo(() => categoryTotals(data.transactions), [data.transactions]);
@@ -62,6 +86,15 @@ export function useTracker() {
   const lastMonth = LAST_MONTH[person === 'combined' ? 'combined' : person];
   const trendPct = Math.round(((heroTotal - lastMonth) / lastMonth) * 100);
   const overallSpent = monthTotal(totals, 'combined');
+
+  // categoryTotals only tracks spend (money out) — this is the other half of
+  // the picture: every "money in" entry, so income is visible somewhere too
+  // instead of only showing up as a stray "+" row in Activity.
+  const incomeTotal = useMemo(() => {
+    const list = person === 'combined' ? data.transactions : data.transactions.filter((tx) => tx.person === person);
+    return list.filter((tx) => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
+  }, [data.transactions, person]);
+  const netTotal = incomeTotal - heroTotal;
 
   const transactions = useMemo(
     () => [...data.transactions].sort(byDateDesc).map((tx) => {
@@ -72,12 +105,12 @@ export function useTracker() {
         letter: m.letter, bg: m.bg, fg: m.fg,
         amountLabel: (isIncome ? '+' : '−') + inr(tx.amount),
         amountColor: isIncome ? 'var(--color-accent-2-700)' : 'var(--color-text)',
-        subLabel: `${tx.category} · ${tx.account}`,
+        subLabel: `${tx.category} · ${personalizeAccount(tx.account)}`,
         sourceLabel: tx.source === 'auto' ? 'Auto' : 'Manual',
         canDelete: tx.person === data.currentUser,
       };
     }),
-    [data.transactions, data.currentUser],
+    [data.transactions, data.currentUser, personalizeAccount],
   );
 
   // ── derived: budgets ───────────────────────────────────────────────────────
@@ -131,6 +164,7 @@ export function useTracker() {
       const utilPct = Math.round((c.outstanding / c.limit) * 100);
       return {
         ...c,
+        personLabel: c.person === 'you' ? youName : partnerName,
         utilPct,
         utilLabel: `${utilPct}%`,
         tagBg: utilPct > 60 ? 'var(--color-accent-200)' : 'var(--color-accent-2-100)',
@@ -139,11 +173,23 @@ export function useTracker() {
         minDueLabel: inr(c.minDue),
       };
     }),
-    [],
+    [youName, partnerName],
   );
   const cardsOutstanding = CARDS_DATA.reduce((s, c) => s + c.outstanding, 0);
   const cardsLimit = CARDS_DATA.reduce((s, c) => s + c.limit, 0);
   const detailCard = cards.find((c) => c.id === selectedCardId) || null;
+
+  // ── derived: card EMIs ──────────────────────────────────────────────────────
+  const emis = useMemo(
+    () => data.cardEmis.map(deriveEmi).map((e) => {
+      const card = cards.find((c) => c.id === e.cardId);
+      return { ...e, cardName: card ? card.name : 'Unknown card' };
+    }).sort((a, b) => (a.nextDueDate || '9999') < (b.nextDueDate || '9999') ? -1 : 1),
+    [data.cardEmis, cards],
+  );
+  const activeEmis = emis.filter((e) => !e.completed);
+  const monthlyEmiTotal = activeEmis.reduce((s, e) => s + e.emiAmount, 0);
+  const emiCardsCount = new Set(activeEmis.map((e) => e.cardId)).size;
 
   // ── derived: notifications ─────────────────────────────────────────────────
   const notifications = useMemo(() => {
@@ -224,8 +270,9 @@ export function useTracker() {
       const item = d.smsQueue[index];
       if (!item) return d;
       const tx = {
-        id: Date.now(), date: TODAY_ISO, merchant: item.merchant, category: item.category,
+        id: Date.now(), date: item.date || TODAY_ISO, merchant: item.merchant, category: item.category,
         amount: item.amount, person: item.person, account: item.account, source: 'auto',
+        type: item.type || 'expense',
       };
       return {
         ...d,
@@ -273,6 +320,54 @@ export function useTracker() {
     setData((d) => ({ ...d, bills: d.bills.filter((b) => b.id !== id) }));
   }, []);
 
+  const addCardEmi = useCallback(({ cardId, item, amount, tenureMonths, paidMonths = 0, startDate }) => {
+    const total = parseFloat(amount);
+    const months = parseInt(tenureMonths, 10);
+    if (!cardId || !item?.trim() || !total || !months || !startDate) return false;
+    setData((d) => ({
+      ...d,
+      cardEmis: [
+        ...d.cardEmis,
+        { id: Date.now(), cardId, item: item.trim(), amount: total, tenureMonths: months, paidMonths: Math.min(paidMonths, months), startDate },
+      ],
+    }));
+    return true;
+  }, []);
+
+  const markEmiPaid = useCallback((id) => {
+    setData((d) => ({
+      ...d,
+      cardEmis: d.cardEmis.map((e) => (e.id === id ? { ...e, paidMonths: Math.min(e.paidMonths + 1, e.tenureMonths) } : e)),
+    }));
+  }, []);
+
+  const deleteCardEmi = useCallback((id) => {
+    setData((d) => ({ ...d, cardEmis: d.cardEmis.filter((e) => e.id !== id) }));
+  }, []);
+
+  const importSmsBatch = useCallback((text) => {
+    const parsed = parseSmsBatch(text);
+    if (!parsed.length) return 0;
+    setData((d) => ({
+      ...d,
+      smsQueue: [
+        ...d.smsQueue,
+        ...parsed.map((p, i) => ({
+          id: `import-${Date.now()}-${i}`,
+          raw: p.raw,
+          merchant: p.merchant,
+          amount: p.amount,
+          account: p.account,
+          category: p.category,
+          type: p.type,
+          date: p.date,
+          person: d.currentUser,
+        })),
+      ],
+    }));
+    return parsed.length;
+  }, []);
+
   const addIou = useCallback(({ direction, person: who, amount, note }) => {
     const v = parseFloat(amount);
     if (!v || !who) return false;
@@ -288,6 +383,34 @@ export function useTracker() {
       ...d,
       ious: d.ious.map((i) => (i.id === id ? { ...i, status: 'repaid' } : i)),
     }));
+  }, []);
+
+  const login = useCallback(({ name, partnerName = '', syncCode = '' }) => {
+    if (!name?.trim()) return false;
+    const partner = partnerName.trim();
+    const code = syncCode.trim().toUpperCase();
+    setData((d) => ({
+      ...d,
+      profile: { ...d.profile, loggedIn: true, name: name.trim(), partnerName: partner, syncCode: code, synced: Boolean(partner && code) },
+    }));
+    return true;
+  }, []);
+
+  const logout = useCallback(() => {
+    setData((d) => ({ ...d, profile: { ...d.profile, loggedIn: false } }));
+  }, []);
+
+  const syncPartner = useCallback(({ partnerName, syncCode }) => {
+    if (!partnerName?.trim() || !syncCode?.trim()) return false;
+    setData((d) => ({
+      ...d,
+      profile: { ...d.profile, partnerName: partnerName.trim(), syncCode: syncCode.trim().toUpperCase(), synced: true },
+    }));
+    return true;
+  }, []);
+
+  const unsyncPartner = useCallback(() => {
+    setData((d) => ({ ...d, profile: { ...d.profile, synced: false } }));
   }, []);
 
   const toggleSetting = useCallback((key) => {
@@ -311,20 +434,26 @@ export function useTracker() {
   return {
     // raw data
     data,
+    // identity
+    youName, partnerName, personalizeAccount,
     // person / view
     person, setPerson, homeView, setHomeView,
-    personLabel: person === 'combined' ? 'Combined' : person === 'you' ? 'You' : 'Priya',
+    personLabel: person === 'combined' ? 'Combined' : person === 'you' ? 'You' : partnerName,
     // navigation
     tab, setTab, screen, openScreen, closeScreen,
     txFilter, setTxFilter, smsIndex, setSmsIndex, openCard, detailCard,
+    emiCardId, emiReturnScreen, openAddEmi,
     // derived
-    totals, heroTotal, trendPct, overallSpent, transactions, txGroups,
+    totals, heroTotal, trendPct, overallSpent, incomeTotal, netTotal, transactions, txGroups,
     budgets, budgetAlerts, bills, openBills, upcomingBills,
     cards, cardsOutstanding, cardsLimit, notifications, hasNotifDot,
+    emis, activeEmis, monthlyEmiTotal, emiCardsCount,
     // actions
-    addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms,
+    addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms, importSmsBatch,
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,
+    addCardEmi, markEmiPaid, deleteCardEmi,
     addIou, markIouRepaid, toggleSetting, resetDemo,
     setCurrentUser: (u) => patch({ currentUser: u }),
+    login, logout, syncPartner, unsyncPartner,
   };
 }
