@@ -14,6 +14,7 @@ export default function AddScreen({ t }) {
   const [error, setError] = useState('');
 
   const categories = type === 'income' ? INCOME_CATS : CATS;
+  const accountNames = ACCOUNT_NAMES.map((name) => t.personalizeAccount(name));
 
   const pressKey = (k) => {
     setAmount((a) => {
@@ -48,7 +49,7 @@ export default function AddScreen({ t }) {
       <SheetHeader
         onBack={t.closeScreen}
         backLabel="Cancel"
-        title={type === 'income' ? 'Add income' : 'Add expense'}
+        title={type === 'income' ? 'Add: money in' : 'Add: money out'}
         action={(
           <button type="button" className="om-sheet-action om-sheet-action-strong" onClick={save}>Save</button>
         )}
@@ -59,8 +60,8 @@ export default function AddScreen({ t }) {
         value={type}
         onChange={(v) => { setType(v); setCategory(null); setError(''); }}
         options={[
-          { value: 'expense', label: 'Expense' },
-          { value: 'income', label: 'Income' },
+          { value: 'expense', label: 'Money out' },
+          { value: 'income', label: 'Money in' },
         ]}
       />
 
@@ -74,7 +75,7 @@ export default function AddScreen({ t }) {
         onChange={setPerson}
         options={[
           { value: 'you', label: 'You' },
-          { value: 'priya', label: 'Priya' },
+          { value: 'priya', label: t.data.profile.partnerName || 'Priya' },
         ]}
         style={{ marginBottom: 'var(--space-4)' }}
       />
@@ -108,7 +109,7 @@ export default function AddScreen({ t }) {
 
       <Eyebrow>Account</Eyebrow>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 'var(--space-4)' }}>
-        {ACCOUNT_NAMES.map((name) => {
+        {accountNames.map((name) => {
           const active = account === name;
           return (
             <button

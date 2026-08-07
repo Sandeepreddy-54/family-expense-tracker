@@ -17,6 +17,26 @@ export default function CardsTab({ t }) {
         </div>
       </div>
 
+      <button
+        type="button"
+        onClick={() => t.openScreen('emis')}
+        style={{ textAlign: 'left', cursor: 'pointer', border: 'none', padding: 0, background: 'none', font: 'inherit' }}
+      >
+        <div className="card elev-sm" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Card EMIs</div>
+            <div style={{ fontSize: 11, color: muted(55) }}>
+              {t.activeEmis.length > 0
+                ? `${t.activeEmis.length} active · across ${t.emiCardsCount} card${t.emiCardsCount === 1 ? '' : 's'}`
+                : 'No EMIs yet — tap to add one'}
+            </div>
+          </div>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: 16 }}>
+            {t.monthlyEmiTotal > 0 ? `${inr(t.monthlyEmiTotal)}/mo` : ''}
+          </div>
+        </div>
+      </button>
+
       {t.cards.map((c) => (
         <button
           key={c.id}

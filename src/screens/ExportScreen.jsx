@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { CARDS_DATA } from '../data/seed.js';
 import { rangeFor, rangeLabel } from '../lib/dates.js';
 import { buildCsv, downloadCsv } from '../lib/csv.js';
 import { muted } from '../lib/format.js';
@@ -35,10 +34,12 @@ export default function ExportScreen({ t }) {
     const csv = buildCsv({
       transactions: rows,
       budgets: t.budgets,
-      cards: CARDS_DATA,
+      cards: t.cards,
       totals: t.totals,
       range,
       label,
+      youName: t.youName,
+      partnerName: t.partnerName,
     });
     downloadCsv(`family-expenses-${range.from || 'start'}-to-${range.to || 'today'}.csv`, csv);
     setError('');

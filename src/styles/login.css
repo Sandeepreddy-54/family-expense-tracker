@@ -1,0 +1,104 @@
+/* Editorial login/onboarding look, inspired by a warm-ledger reference design.
+   Reuses the app-wide Lora heading font (see organic.css's :root) so the whole
+   app now shares one editorial voice; only the layout here is bespoke to sign-in. */
+
+.db-login {
+  --db-bg: #f3f1ea;
+  --db-ink: var(--color-text);
+  --db-muted: #767b86;
+  --db-accent: var(--color-accent);
+  --db-accent-soft: color-mix(in srgb, var(--color-accent) 14%, var(--db-bg));
+  --db-border: color-mix(in srgb, var(--db-ink) 14%, transparent);
+  --db-font-serif: var(--font-heading);
+
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--db-bg);
+  color: var(--db-ink);
+  font-family: var(--font-body);
+  padding: 64px 28px 34px;
+  overflow-y: auto;
+}
+
+.db-top { display: flex; align-items: center; justify-content: space-between; }
+
+.db-back {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-size: 12px; letter-spacing: 0.03em; color: var(--db-muted); font-family: var(--font-body);
+}
+.db-back:hover { color: var(--db-accent); }
+
+.db-badge {
+  width: 50px; height: 50px; border-radius: 999px; flex-shrink: 0;
+  border: 1.5px solid var(--db-accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--db-font-serif); font-size: 18px; color: var(--db-accent);
+}
+
+.db-dots { display: flex; gap: 6px; }
+.db-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--db-border); }
+.db-dot.is-active { background: var(--db-accent); }
+
+.db-heading {
+  font-family: var(--db-font-serif); font-weight: 500; font-size: 29px;
+  line-height: 1.2; letter-spacing: -0.01em; margin: 0 0 14px; color: var(--db-ink);
+}
+
+.db-rule { width: 56px; height: 1px; background: var(--db-border); border: none; margin: 0; }
+
+.db-subtitle {
+  font-family: var(--db-font-serif); font-style: italic; font-size: 14.5px;
+  line-height: 1.55; color: var(--db-muted); margin: 0;
+}
+
+.db-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.db-list li {
+  font-family: var(--db-font-serif); font-size: 13.5px; color: var(--db-ink);
+  display: flex; gap: 10px; line-height: 1.4;
+}
+.db-list li::before { content: '—'; color: var(--db-accent); flex-shrink: 0; }
+
+.db-field { display: flex; flex-direction: column; gap: 6px; }
+.db-field label {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--db-muted); font-family: var(--font-body);
+}
+.db-input {
+  width: 100%; box-sizing: border-box; font: inherit; font-size: 14.5px; color: var(--db-ink);
+  background: var(--db-bg); border: 1px solid var(--db-border); border-radius: 12px;
+  padding: 12px 14px; caret-color: var(--db-accent);
+}
+.db-input:hover { border-color: color-mix(in srgb, var(--db-ink) 35%, transparent); }
+.db-input:focus-visible { outline: none; border-color: var(--db-accent); }
+.db-input::placeholder { color: color-mix(in srgb, var(--db-muted) 75%, transparent); }
+
+.db-code-row { display: flex; gap: 8px; align-items: stretch; }
+.db-code-row .db-input { flex: 1; text-transform: uppercase; letter-spacing: 0.08em; }
+.db-gen {
+  flex-shrink: 0; padding: 0 14px; border-radius: 12px; border: 1px solid var(--db-border);
+  background: var(--db-accent-soft); color: var(--db-accent); font-size: 12.5px;
+  font-family: var(--font-body); font-weight: 600; cursor: pointer;
+}
+.db-gen:hover { border-color: var(--db-accent); }
+
+.db-hint { font-size: 11.5px; color: var(--db-muted); line-height: 1.5; margin: 6px 0 0; }
+
+.db-error { font-size: 12px; color: var(--db-accent); text-align: center; margin: 0; }
+
+.db-spacer { flex: 1; }
+
+.db-btn {
+  width: 100%; box-sizing: border-box; text-align: center; padding: 13px 18px; border-radius: 12px;
+  border: 1.5px solid var(--db-accent); background: transparent; color: var(--db-accent);
+  font-family: var(--db-font-serif); font-size: 15px; cursor: pointer;
+}
+.db-btn:hover { background: var(--db-accent-soft); }
+.db-btn:active { background: color-mix(in srgb, var(--db-accent-soft) 60%, var(--db-accent) 12%); }
+
+.db-foot { text-align: center; font-size: 12.5px; color: var(--db-muted); margin: 0; }
+.db-foot button {
+  background: none; border: none; padding: 0; cursor: pointer; font: inherit;
+  color: var(--db-accent); text-decoration: underline; text-underline-offset: 3px;
+}

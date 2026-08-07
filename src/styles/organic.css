@@ -2,13 +2,15 @@
 /* Vendored verbatim from Claude Design project "Shared Spending Tracker App",
    _ds/organic-1e27a937-4771-4012-a8a6-9436bfc29b38/styles.css — do not edit by hand;
    re-pull from the design project instead. */
-@import url('https://fonts.googleapis.com/css2?family=Caprasimo:wght@400&family=Figtree:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Figtree:wght@400;600;700&display=swap');
 
 :root {
-  --color-bg: #f5ead8;
-  --color-surface: #ebddc5;
+  /* Warm cream blended with a cooler editorial cream for a softer, more
+     legible page — see the login screen for where that reference leaned. */
+  --color-bg: #f4efe3;
+  --color-surface: #ece2d0;
   --color-text: #201e1d;
-  --color-accent: #c67139;
+  --color-accent: #b2622d;
   --color-accent-2: #7a8a5e;
   --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
 
@@ -44,8 +46,8 @@
   --color-accent-2-800: #3d472b;
   --color-accent-2-900: #272e1b;
 
-  --font-heading: "Caprasimo", system-ui, sans-serif;
-  --font-heading-weight: 400;
+  --font-heading: "Lora", Georgia, serif;
+  --font-heading-weight: 500;
   --font-body: "Figtree", system-ui, sans-serif;
 
   --space-1: 4.4px;
@@ -56,8 +58,8 @@
   --space-8: 35.2px;
 
   --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 28px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
 
   /* Elevation — derived from the ground: soft ink-tinted shadows on a
      light theme, a hairline edge + ambient darkness on a dark one. */
@@ -126,9 +128,9 @@ figcaption {
 }
 .btn svg { display: block; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { background: var(--color-accent); color: var(--color-bg); }
-.btn-primary:hover { background: var(--color-accent-600); }
-.btn-primary:active { background: var(--color-accent-700); }
+.btn-primary { background: transparent; border-color: var(--color-accent); color: var(--color-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.btn-primary:active { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
 .btn-secondary { border-color: var(--color-divider); }
 .btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
 .btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
@@ -253,7 +255,9 @@ textarea.input { min-height: 90px; resize: vertical; }
 .dialog-body { font-size: 14px; opacity: 0.85; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
 
-/* — rounded frame: everything softens, small controls go pill — */
-.card, .dialog { border-radius: calc(var(--radius-lg) * 1.15); }
-.btn, .tag, .seg, .input { border-radius: 999px; }
+/* — rounded frame: cards & controls stay softly rectangular (editorial),
+   only small chips go full pill — */
+.card, .dialog { border-radius: var(--radius-lg); }
+.btn, .seg, .input { border-radius: var(--radius-md); }
+.tag { border-radius: 999px; }
 .input { padding-inline: 14px; }

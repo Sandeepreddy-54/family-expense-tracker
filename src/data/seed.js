@@ -78,6 +78,15 @@ export const CARDS_DATA = [
 
 export const ACCOUNT_NAMES = ['PhonePe (Rohan)', 'PhonePe (Priya)', 'HDFC Regalia', 'ICICI Amazon Pay'];
 
+// Credit-card EMIs — a large purchase converted to fixed monthly installments
+// on a specific card. `paidMonths` is how many instalments have gone through;
+// everything else (next due date, months left, per-month amount) is derived
+// from it in lib/emi.js so there's one source of truth per EMI.
+export const CARD_EMIS_INITIAL = [
+  { id: 1, cardId: 'hdfc', item: 'MacBook Air M2', amount: 89999, tenureMonths: 12, paidMonths: 5, startDate: '2026-04-05' },
+  { id: 2, cardId: 'icici', item: 'iPhone 15', amount: 64900, tenureMonths: 9, paidMonths: 2, startDate: '2026-06-15' },
+];
+
 // Transactions carry a real ISO date; the "Today, Aug 6" / "Aug 5" group
 // headings the design shows are derived from it (see lib/dates.js), which is
 // also what makes the export date filters real.
@@ -128,14 +137,16 @@ export const BILLS_INITIAL = [
 ];
 
 // Historical months for the Trends bar chart. The final entry is replaced with
-// the live month-to-date total at render time.
+// the live month-to-date total at render time; any other month is replaced too
+// as soon as real transactions exist for it (e.g. backfilled via SMS import) —
+// see realMonthlyTotal in lib/totals.js.
 export const MONTH_HISTORY = [
-  { label: 'Mar', amount: 61000 },
-  { label: 'Apr', amount: 58000 },
-  { label: 'May', amount: 72000 },
-  { label: 'Jun', amount: 69500 },
-  { label: 'Jul', amount: 68500 },
-  { label: 'Aug', amount: null },
+  { label: 'Mar', month: '2026-03', amount: 61000 },
+  { label: 'Apr', month: '2026-04', amount: 58000 },
+  { label: 'May', month: '2026-05', amount: 72000 },
+  { label: 'Jun', month: '2026-06', amount: 69500 },
+  { label: 'Jul', month: '2026-07', amount: 68500 },
+  { label: 'Aug', month: '2026-08', amount: null },
 ];
 
 export const HEATMAP_SEED = [
@@ -180,6 +191,14 @@ export const DEFAULT_SETTINGS = {
   notifBills: true,
   notifWeekly: false,
   shared: true,
+};
+
+export const DEFAULT_PROFILE = {
+  loggedIn: false,
+  name: '',
+  partnerName: '',
+  syncCode: '',
+  synced: false,
 };
 
 export const NOTIF_TOGGLES = [
