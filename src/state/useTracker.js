@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BILLS_INITIAL, BUDGETS_DATA, CARD_EMIS_INITIAL, CARDS_DATA, DEFAULT_OVERALL_BUDGET,
-  DEFAULT_PROFILE, DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, NOTIFS_HISTORICAL, SMS_INITIAL,
+  DEFAULT_PROFILE, DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, SMS_INITIAL,
   TODAY, TODAY_ISO, TX_INITIAL, catMeta,
 } from '../data/seed.js';
 import { categoryTotals, monthTotal } from '../lib/totals.js';
@@ -84,7 +84,9 @@ export function useTracker() {
   const totals = useMemo(() => categoryTotals(data.transactions), [data.transactions]);
   const heroTotal = monthTotal(totals, person);
   const lastMonth = LAST_MONTH[person === 'combined' ? 'combined' : person];
-  const trendPct = Math.round(((heroTotal - lastMonth) / lastMonth) * 100);
+  // No baseline yet (fresh household) — there's nothing meaningful to compare
+  // against, so the Home hero hides the trend line instead of showing ±Infinity%.
+  const trendPct = lastMonth > 0 ? Math.round(((heroTotal - lastMonth) / lastMonth) * 100) : null;
   const overallSpent = monthTotal(totals, 'combined');
 
   // categoryTotals only tracks spend (money out) — this is the other half of
@@ -222,7 +224,6 @@ export function useTracker() {
         time: 'Today',
       });
     }
-    out.push(NOTIFS_HISTORICAL.recurringDetected);
     if (budgetAlerts[1]) {
       const a = budgetAlerts[1];
       out.push({
@@ -232,7 +233,6 @@ export function useTracker() {
         time: 'Yesterday',
       });
     }
-    out.push(NOTIFS_HISTORICAL.weekly);
     return out;
   }, [data.smsQueue.length, budgetAlerts, upcomingBills]);
 
@@ -424,9 +424,13 @@ export function useTracker() {
     setScreen('cardDetail');
   }, []);
 
-  const resetDemo = useCallback(() => {
-    if (!window.confirm('Reset the demo back to its seeded data?')) return;
-    setData(freshData());
+  const clearData = useCallback(() => {
+    if (!window.confirm('Clear all transactions, SMS queue, bills, IOUs, and card EMIs? This can\'t be undone.')) return;
+    // Only the activity data — login, partner sync, settings and budgets are
+    // untouched, so this doesn't sign anyone out.
+    setData((d) => ({
+      ...d, transactions: [], smsQueue: [], bills: [], ious: [], cardEmis: [],
+    }));
     setScreen(null);
     setTab('home');
   }, []);
@@ -452,7 +456,7 @@ export function useTracker() {
     addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms, importSmsBatch,
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,
     addCardEmi, markEmiPaid, deleteCardEmi,
-    addIou, markIouRepaid, toggleSetting, resetDemo,
+    addIou, markIouRepaid, toggleSetting, clearData,
     setCurrentUser: (u) => patch({ currentUser: u }),
     login, logout, syncPartner, unsyncPartner,
   };

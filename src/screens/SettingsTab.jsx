@@ -168,9 +168,9 @@ export default function SettingsTab({ t }) {
       </div>
 
       <div>
-        <Eyebrow>Demo</Eyebrow>
-        <button type="button" onClick={t.resetDemo} className="btn btn-secondary btn-block" style={{ marginTop: 0 }}>
-          Reset to seeded data
+        <Eyebrow>Data</Eyebrow>
+        <button type="button" onClick={t.clearData} className="btn btn-secondary btn-block" style={{ marginTop: 0 }}>
+          Clear all data
         </button>
       </div>
     </div>

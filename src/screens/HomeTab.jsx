@@ -14,9 +14,11 @@ function Hero({ t }) {
           Money out · This month · {t.personLabel}
         </div>
         <div style={{ fontFamily: 'var(--font-heading)', fontSize: 34, lineHeight: 1.1 }}>{inr(t.heroTotal)}</div>
-        <div style={{ fontSize: 12, opacity: 0.9 }}>
-          {(t.trendPct >= 0 ? '▲ ' : '▼ ') + Math.abs(t.trendPct)}% vs last month
-        </div>
+        {t.trendPct != null && (
+          <div style={{ fontSize: 12, opacity: 0.9 }}>
+            {(t.trendPct >= 0 ? '▲ ' : '▼ ') + Math.abs(t.trendPct)}% vs last month
+          </div>
+        )}
       </div>
 
       <div className="om-row" style={{ gap: 'var(--space-2)' }}>
