@@ -42,7 +42,26 @@ function IOSStatusBar({ dark = false, time = '9:41' }) {
   );
 }
 
-export default function IOSDevice({ children, width = 402, height = 874, dark = false }) {
+// On an actual phone (installed or just opened in a mobile browser) this is
+// the whole screen, and the OS already draws its own status bar / home
+// indicator — the bezel, fake "9:41" status bar and fake home indicator below
+// are decorative device chrome for a desktop preview only, so `frameless`
+// drops all of it and fills the real viewport instead, using safe-area insets
+// where the OS chrome actually needs clearance.
+export default function IOSDevice({ children, width = 402, height = 874, dark = false, frameless = false }) {
+  if (frameless) {
+    return (
+      <div style={{
+        width: '100%', height: '100dvh', position: 'relative',
+        background: dark ? '#000' : 'var(--color-bg)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        paddingTop: 'env(safe-area-inset-top)',
+      }}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div style={{
       width, height, borderRadius: 48, overflow: 'hidden',

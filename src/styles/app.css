@@ -4,6 +4,10 @@
 
 ::-webkit-scrollbar { width: 0; height: 0 }
 
+/* Defensive baseline — the fixed-width desktop preview frame below must
+   never be able to force the real page wider than the viewport. */
+html, body { overflow-x: hidden; max-width: 100%; }
+
 .om-row { display: flex; align-items: center }
 
 .om-bar-track {
@@ -47,6 +51,15 @@
   text-align: center;
 }
 
+/* On a real phone (or any narrow viewport) there's no desktop preview around
+   it — the device frame fills the page edge to edge instead of sitting
+   centered with padding and marketing copy. */
+.om-page.is-frameless {
+  min-height: 100dvh;
+  padding: 0;
+  gap: 0;
+}
+
 /* — in-device chrome — */
 .om-screen { flex: 1; overflow-y: auto; padding: 60px var(--space-4) 100px }
 .om-sheet {
@@ -56,6 +69,11 @@
   padding: 60px var(--space-4) 30px;
   overflow-y: auto;
 }
+/* Frameless mode has no fake status bar to clear (the real one is handled by
+   safe-area-inset-top on the frame itself), so the extra 60px goes away. */
+.om-page.is-frameless .om-screen { padding-top: var(--space-4); }
+.om-page.is-frameless .om-sheet { padding-top: var(--space-4); }
+.om-page.is-frameless .db-login { padding-top: 28px; }
 .om-sheet-head {
   display: flex;
   align-items: center;
@@ -107,3 +125,6 @@
   font-family: inherit;
 }
 .om-tabbar span { font-size: 9.5px }
+/* Real home indicator / gesture bar clearance instead of the fake mockup's
+   fixed 26px, which was only ever sized to match the decorative frame. */
+.om-page.is-frameless .om-tabbar { padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
