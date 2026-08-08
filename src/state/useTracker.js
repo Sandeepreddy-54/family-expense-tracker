@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BILLS_INITIAL, BUDGETS_DATA, CARD_EMIS_INITIAL, CARDS_DATA, DEFAULT_OVERALL_BUDGET,
-  DEFAULT_PROFILE, DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, SMS_INITIAL,
+  DEFAULT_PROFILE, DEFAULT_RELAY, DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, SMS_INITIAL,
   TODAY, TODAY_ISO, TX_INITIAL, catMeta,
 } from '../data/seed.js';
 import { categoryTotals, monthTotal } from '../lib/totals.js';
 import { daysUntil, inr, muted, shortDate } from '../lib/format.js';
 import { byDateDesc, groupByDate } from '../lib/dates.js';
 import { deriveEmi } from '../lib/emi.js';
-import { parseSmsBatch } from '../lib/smsParser.js';
+import { parseSmsBatch, parseSmsMessage } from '../lib/smsParser.js';
 
 const STORAGE_KEY = 'family-expense-tracker/v1';
 
@@ -23,6 +23,7 @@ const freshData = () => ({
   settings: DEFAULT_SETTINGS,
   currentUser: 'you',
   profile: DEFAULT_PROFILE,
+  relay: DEFAULT_RELAY,
 });
 
 function loadData() {
@@ -58,6 +59,7 @@ export function useTracker() {
   const [smsIndex, setSmsIndex] = useState(0);
   const [emiCardId, setEmiCardId] = useState(null);
   const [emiReturnScreen, setEmiReturnScreen] = useState('emis');
+  const [relayStatus, setRelayStatus] = useState({ checking: false, message: '' });
 
   const openScreen = useCallback((name) => setScreen(name), []);
   const closeScreen = useCallback(() => setScreen(null), []);
@@ -368,6 +370,65 @@ export function useTracker() {
     return parsed.length;
   }, []);
 
+  const setRelayConfig = useCallback((url, token) => {
+    setData((d) => ({ ...d, relay: { url: url.trim(), token: token.trim() } }));
+  }, []);
+
+  // Pulls whatever MacroDroid has forwarded to the relay since last check and
+  // runs it through the same parser the paste-based Import screen uses, so a
+  // captured message lands in Review Payments identically either way.
+  const checkForNewSms = useCallback(async () => {
+    const { url, token } = data.relay;
+    if (!url || !token) {
+      setRelayStatus({ checking: false, message: 'Set the relay URL and token first.' });
+      return;
+    }
+    const base = url.replace(/\/$/, '');
+    setRelayStatus({ checking: true, message: '' });
+    try {
+      const res = await fetch(`${base}/pending`, { headers: { 'X-Relay-Token': token } });
+      if (!res.ok) throw new Error(`Relay returned ${res.status}`);
+      const { items } = await res.json();
+      if (!items || !items.length) {
+        setRelayStatus({ checking: false, message: 'No new messages.' });
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        smsQueue: [
+          ...d.smsQueue,
+          ...items.map((item, i) => {
+            const p = parseSmsMessage(item.message);
+            return {
+              id: `relay-${Date.now()}-${i}`,
+              raw: p.raw, merchant: p.merchant, amount: p.amount, account: p.account,
+              category: p.category, type: p.type, date: p.date, person: d.currentUser,
+            };
+          }),
+        ],
+      }));
+      await fetch(`${base}/ack`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Relay-Token': token },
+        body: JSON.stringify({ ids: items.map((item) => item.id) }),
+      });
+      setRelayStatus({ checking: false, message: `${items.length} new message${items.length === 1 ? '' : 's'} added to review.` });
+    } catch {
+      setRelayStatus({ checking: false, message: 'Could not reach the relay — check the URL and token.' });
+    }
+  }, [data.relay]);
+
+  // Check once on open and again whenever the tab/app comes back to the
+  // foreground — no persistent connection, just "catch up when I look at it."
+  useEffect(() => {
+    if (!data.profile.loggedIn || !data.relay.url || !data.relay.token) return undefined;
+    checkForNewSms();
+    const onVisible = () => { if (document.visibilityState === 'visible') checkForNewSms(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.profile.loggedIn, data.relay.url, data.relay.token]);
+
   const addIou = useCallback(({ direction, person: who, amount, note }) => {
     const v = parseFloat(amount);
     if (!v || !who) return false;
@@ -459,5 +520,7 @@ export function useTracker() {
     addIou, markIouRepaid, toggleSetting, clearData,
     setCurrentUser: (u) => patch({ currentUser: u }),
     login, logout, syncPartner, unsyncPartner,
+    // SMS relay (single-device auto-capture)
+    relayStatus, setRelayConfig, checkForNewSms,
   };
 }
