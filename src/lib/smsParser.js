@@ -6,13 +6,25 @@
 const AMOUNT_RE = /(?:Rs\.?|INR)\s?([\d,]+(?:\.\d{1,2})?)/i;
 const VPA_RE = /to\s+VPA\s+([\w.\-]+)@/i;
 const AT_MERCHANT_RE = /\bat\s+([A-Z][A-Z0-9 &.'\-]{2,30}?)\s+on\b/i;
+// UPI "sent" messages name the payee as "To X" rather than "at X on" — its own
+// pattern because the terminator differs (end of line, not the word "on").
+const TO_MERCHANT_RE = /\bto\s+([A-Z][A-Z0-9 &.'\-]{2,40}?)\s*(?:\n|\s+on\b|$)/i;
 // Money coming in vs going out — everything not matched here defaults to an
 // expense, so a message with neither word (rare) still lands somewhere sane.
 const CREDIT_WORDS = /credited|deposited|received|refunded|refund|cashback|reversed/i;
-const DEBIT_WORDS = /debited|spent|used for|paid|withdrawn|purchase/i;
+const DEBIT_WORDS = /debited|spent|used for|paid|withdrawn|purchase|\bsent\b/i;
 const KNOWN_ACCOUNTS = ['PhonePe', 'HDFC', 'ICICI'];
+// DD-MMM-YY(YY) / DD-MM-YY(YY) style, e.g. "06-Aug-26" or "08/08/26".
 const DATE_RE = /\b(\d{1,2})[-/](\w{3}|\d{1,2})[-/](\d{2,4})\b/;
+// YYYY-MM-DD style, e.g. card-transaction alerts stamping "2026-08-09:10:05:27".
+const ISO_DATE_RE = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/;
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+
+// A message copy-pasted from a forwarded WhatsApp chat carries its own
+// "[11:28 am, 09/08/2026] Sandeep: " header before the real SMS text. Left in,
+// its date reliably wins the date match over the actual transaction date
+// buried later in the message — so it's stripped before any other guessing.
+const WHATSAPP_PREFIX_RE = /^\[\d{1,2}:\d{2}(?::\d{2})?\s?(?:[ap]\.?m\.?)?,\s?\d{1,2}\/\d{1,2}\/\d{2,4}\]\s*[^:\n]{1,40}:\s*/i;
 
 const CATEGORY_HINTS = [
   { cat: 'Food & Dining', words: ['swiggy', 'zomato', 'restaurant', 'cafe'] },
@@ -48,6 +60,8 @@ function guessMerchant(raw) {
   if (vpa) return vpa[1].replace(/[._-]/g, ' ').trim();
   const at = raw.match(AT_MERCHANT_RE);
   if (at) return at[1].trim();
+  const to = raw.match(TO_MERCHANT_RE);
+  if (to) return to[1].trim();
   return 'Unknown merchant';
 }
 
@@ -62,6 +76,16 @@ function guessCategory(raw, merchant) {
 }
 
 function guessDate(raw) {
+  const iso = raw.match(ISO_DATE_RE);
+  if (iso) {
+    const [, y, mon, d] = iso;
+    const year = parseInt(y, 10);
+    const month = parseInt(mon, 10);
+    const day = parseInt(d, 10);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
   const m = raw.match(DATE_RE);
   if (!m) return null;
   const [, d, mon, y] = m;
@@ -73,7 +97,8 @@ function guessDate(raw) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-export function parseSmsMessage(raw) {
+export function parseSmsMessage(rawInput) {
+  const raw = rawInput.replace(WHATSAPP_PREFIX_RE, '');
   const amountMatch = raw.match(AMOUNT_RE);
   const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
   const merchant = guessMerchant(raw);
