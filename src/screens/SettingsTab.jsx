@@ -10,6 +10,8 @@ export default function SettingsTab({ t }) {
   const [partnerName, setPartnerName] = useState(profile.partnerName || '');
   const [syncCode, setSyncCode] = useState(profile.syncCode || '');
   const [syncError, setSyncError] = useState('');
+  const [relayUrl, setRelayUrl] = useState(t.data.relay.url);
+  const [relayToken, setRelayToken] = useState(t.data.relay.token);
 
   const connect = () => {
     if (!partnerName.trim() || !syncCode.trim()) {
@@ -18,6 +20,13 @@ export default function SettingsTab({ t }) {
     }
     t.syncPartner({ partnerName, syncCode });
     setSyncError('');
+  };
+
+  // The auto-check effect in useTracker watches data.relay.url/token, so saving
+  // a new value triggers a check on its own once the state update lands —
+  // no need (and no reliable way, given the stale closure) to call it here too.
+  const saveRelayConfig = () => {
+    t.setRelayConfig(relayUrl, relayToken);
   };
 
   return (
@@ -109,6 +118,51 @@ export default function SettingsTab({ t }) {
         />
         <div style={{ fontSize: 11, color: muted(55), marginTop: 6 }}>
           You can only delete entries you made yourself.
+        </div>
+      </div>
+
+      <div>
+        <Eyebrow>Automatic SMS capture</Eyebrow>
+        <div className="card elev-sm" style={{ gap: 'var(--space-3)' }}>
+          <div style={{ fontSize: 11, color: muted(60) }}>
+            Point this at your deployed relay so a MacroDroid automation can forward bank/PhonePe
+            texts straight into Review Payments — no manual paste needed.
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="relay-url">Relay URL</label>
+            <input
+              id="relay-url"
+              className="input"
+              value={relayUrl}
+              onChange={(e) => setRelayUrl(e.target.value)}
+              placeholder="https://expense-tracker-sms-relay.your-subdomain.workers.dev"
+            />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="relay-token">Relay token</label>
+            <input
+              id="relay-token"
+              className="input"
+              value={relayToken}
+              onChange={(e) => setRelayToken(e.target.value)}
+              placeholder="matches the worker's RELAY_TOKEN secret"
+            />
+          </div>
+          <div className="om-row" style={{ gap: 8 }}>
+            <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={saveRelayConfig}>Save</button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ flex: 1 }}
+              onClick={t.checkForNewSms}
+              disabled={t.relayStatus.checking}
+            >
+              {t.relayStatus.checking ? 'Checking…' : 'Check now'}
+            </button>
+          </div>
+          {t.relayStatus.message && (
+            <div style={{ fontSize: 11.5, color: muted(60), textAlign: 'center' }}>{t.relayStatus.message}</div>
+          )}
         </div>
       </div>
 

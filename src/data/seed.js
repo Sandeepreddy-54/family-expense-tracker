@@ -170,6 +170,10 @@ export const DEFAULT_PROFILE = {
   synced: false,
 };
 
+// Single-user SMS relay (MacroDroid -> a small hosted mailbox -> here).
+// Empty until the user pastes in their own deployed relay's URL/token.
+export const DEFAULT_RELAY = { url: '', token: '' };
+
 export const NOTIF_TOGGLES = [
   { key: 'notifNewTx', label: 'New auto-detected transaction' },
   { key: 'notifBudget', label: 'Budget threshold alerts (85%)' },
