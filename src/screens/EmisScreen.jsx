@@ -2,7 +2,8 @@ import { inr, muted } from '../lib/format.js';
 import { Bar, SheetHeader } from '../components/ui.jsx';
 
 export default function EmisScreen({ t }) {
-  const byCard = t.cards
+  const hasCards = t.creditAccounts.length > 0;
+  const byCard = t.creditAccounts
     .map((c) => ({ card: c, items: t.emis.filter((e) => e.cardId === c.id) }))
     .filter((g) => g.items.length > 0);
 
@@ -11,11 +12,11 @@ export default function EmisScreen({ t }) {
       <SheetHeader
         onBack={t.closeScreen}
         title="Card EMIs"
-        action={(
-          <button type="button" className="om-sheet-action om-sheet-action-strong" onClick={() => t.openAddEmi(t.cards[0]?.id)}>
+        action={hasCards ? (
+          <button type="button" className="om-sheet-action om-sheet-action-strong" onClick={() => t.openAddEmi(t.creditAccounts[0]?.id)}>
             Add
           </button>
-        )}
+        ) : <div className="om-sheet-spacer" />}
       />
 
       <div className="card elev-md" style={{ background: 'var(--color-accent)', color: 'var(--color-bg)', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
@@ -30,7 +31,7 @@ export default function EmisScreen({ t }) {
 
       {byCard.length === 0 && (
         <div style={{ fontSize: 12.5, color: muted(55), textAlign: 'center', padding: 'var(--space-6) 0' }}>
-          No EMIs yet — tap Add to log one against a card.
+          {hasCards ? 'No EMIs yet — tap Add to log one against a card.' : 'Add a credit card first, from Cards & accounts.'}
         </div>
       )}
 

@@ -3,7 +3,7 @@ import { inr } from '../lib/format.js';
 import { Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
 
 export default function AddEmiScreen({ t }) {
-  const [cardId, setCardId] = useState(t.emiCardId || t.cards[0]?.id || '');
+  const [cardId, setCardId] = useState(t.emiCardId || t.creditAccounts[0]?.id || '');
   const [item, setItem] = useState('');
   const [amount, setAmount] = useState('');
   const [tenureMonths, setTenureMonths] = useState('');
@@ -16,6 +16,7 @@ export default function AddEmiScreen({ t }) {
   const preview = totalNum > 0 && tenureNum > 0 ? Math.round(totalNum / tenureNum) : null;
 
   const save = () => {
+    if (!cardId) return setError('Add a credit card first.');
     if (!item.trim()) return setError('What did you buy?');
     if (!totalNum) return setError('Enter the total purchase amount.');
     if (!tenureNum) return setError('Enter the number of months.');
@@ -46,7 +47,7 @@ export default function AddEmiScreen({ t }) {
         name="emiCard"
         value={cardId}
         onChange={setCardId}
-        options={t.cards.map((c) => ({ value: c.id, label: c.name }))}
+        options={t.creditAccounts.map((c) => ({ value: c.id, label: c.name }))}
         style={{ marginBottom: 'var(--space-4)' }}
       />
 

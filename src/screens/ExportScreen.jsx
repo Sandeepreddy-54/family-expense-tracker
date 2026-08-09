@@ -34,7 +34,7 @@ export default function ExportScreen({ t }) {
     const csv = buildCsv({
       transactions: rows,
       budgets: t.budgets,
-      cards: t.cards,
+      creditAccounts: t.creditAccounts,
       totals: t.totals,
       range,
       label,

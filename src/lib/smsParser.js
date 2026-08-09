@@ -13,7 +13,7 @@ const TO_MERCHANT_RE = /\bto\s+([A-Z][A-Z0-9 &.'\-]{2,40}?)\s*(?:\n|\s+on\b|$)/i
 // expense, so a message with neither word (rare) still lands somewhere sane.
 const CREDIT_WORDS = /credited|deposited|received|refunded|refund|cashback|reversed/i;
 const DEBIT_WORDS = /debited|spent|used for|paid|withdrawn|purchase|\bsent\b/i;
-const KNOWN_ACCOUNTS = ['PhonePe', 'HDFC', 'ICICI'];
+const KNOWN_ACCOUNTS = ['PhonePe', 'HDFC', 'ICICI', 'SBI'];
 // DD-MMM-YY(YY) / DD-MM-YY(YY) style, e.g. "06-Aug-26" or "08/08/26".
 const DATE_RE = /\b(\d{1,2})[-/](\w{3}|\d{1,2})[-/](\d{2,4})\b/;
 // YYYY-MM-DD style, e.g. card-transaction alerts stamping "2026-08-09:10:05:27".

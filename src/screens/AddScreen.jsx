@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ACCOUNT_NAMES, CATS, INCOME_CATS } from '../data/seed.js';
+import { CATS, INCOME_CATS } from '../data/seed.js';
 import { Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
 
 export default function AddScreen({ t }) {
@@ -12,7 +12,7 @@ export default function AddScreen({ t }) {
   const [error, setError] = useState('');
 
   const categories = type === 'income' ? INCOME_CATS : CATS;
-  const accountNames = ACCOUNT_NAMES.map((name) => t.personalizeAccount(name));
+  const accountNames = t.data.accounts.map((a) => t.personalizeAccount(a.name));
 
   const save = () => {
     const value = parseFloat(amount);
@@ -117,6 +117,15 @@ export default function AddScreen({ t }) {
       </div>
 
       <Eyebrow>Account</Eyebrow>
+      {accountNames.length === 0 && (
+        <div style={{ fontSize: 12, color: 'var(--color-accent-700)', marginBottom: 'var(--space-3)' }}>
+          No accounts yet —{' '}
+          <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12, display: 'inline' }} onClick={() => t.openScreen('addAccount')}>
+            add one
+          </button>{' '}
+          first.
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 'var(--space-4)' }}>
         {accountNames.map((name) => {
           const active = account === name;

@@ -10,7 +10,7 @@ const row = (cells) => cells.map(esc).join(',');
  * Build the export the design promises: "all transactions, budgets, and card
  * summaries — combined and per person — as a CSV".
  */
-export function buildCsv({ transactions, budgets, cards, totals, range, label, youName = 'You', partnerName = 'Partner' }) {
+export function buildCsv({ transactions, budgets, creditAccounts, totals, range, label, youName = 'You', partnerName = 'Partner' }) {
   const lines = [];
   const personalizeAccount = (name) => name.replace('Rohan', youName).replace('Priya', partnerName);
 
@@ -54,17 +54,17 @@ export function buildCsv({ transactions, budgets, cards, totals, range, label, y
   lines.push('');
 
   lines.push(row(['CREDIT CARDS']));
-  lines.push(row(['Card', 'Holder', 'Last 4', 'Outstanding (INR)', 'Limit (INR)', 'Used %', 'Due date', 'Min due (INR)']));
-  cards.forEach((c) => {
+  lines.push(row(['Card', 'Holder', 'Last 4', 'Spend since statement (INR)', 'Limit (INR)', 'Used %', 'Statement date', 'Due date']));
+  creditAccounts.forEach((c) => {
     lines.push(row([
       c.name,
       c.personLabel,
       c.last4,
-      c.outstanding,
+      c.cycleSpend,
       c.limit,
-      Math.round((c.outstanding / c.limit) * 100),
-      c.dueDate,
-      c.minDue,
+      c.utilPct,
+      c.statementLabel,
+      c.dueLabel,
     ]));
   });
 
