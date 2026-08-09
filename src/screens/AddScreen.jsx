@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { CATS, INCOME_CATS } from '../data/seed.js';
-import { Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
+import { CATS, INCOME_CATS, TODAY_ISO } from '../data/seed.js';
+import { ConfirmDialog, Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
+import { findDuplicates } from '../lib/duplicates.js';
+import { inr, shortDate } from '../lib/format.js';
 
 export default function AddScreen({ t }) {
   const [amount, setAmount] = useState('');
@@ -10,15 +12,12 @@ export default function AddScreen({ t }) {
   const [account, setAccount] = useState(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  const [duplicates, setDuplicates] = useState(null);
 
   const categories = type === 'income' ? INCOME_CATS : CATS;
   const accountNames = t.data.accounts.map((a) => t.personalizeAccount(a.name));
 
-  const save = () => {
-    const value = parseFloat(amount);
-    if (!value) return setError('Enter an amount.');
-    if (!category) return setError('Pick a category.');
-    if (!account) return setError('Pick an account.');
+  const commit = (value) => {
     t.addTransaction({
       merchant: note || category,
       category,
@@ -29,6 +28,16 @@ export default function AddScreen({ t }) {
       type,
     });
     t.closeScreen();
+  };
+
+  const save = () => {
+    const value = parseFloat(amount);
+    if (!value) return setError('Enter an amount.');
+    if (!category) return setError('Pick a category.');
+    if (!account) return setError('Pick an account.');
+    const dupes = findDuplicates(t.data.transactions, value, TODAY_ISO, type);
+    if (dupes.length > 0) { setDuplicates(dupes); return undefined; }
+    commit(value);
     return undefined;
   };
 
@@ -161,6 +170,16 @@ export default function AddScreen({ t }) {
         <div role="alert" style={{ marginTop: 'var(--space-2)', fontSize: 12, color: 'var(--color-accent-700)', textAlign: 'center' }}>
           {error}
         </div>
+      )}
+
+      {duplicates && (
+        <ConfirmDialog
+          title="Possible duplicate"
+          body={`You already logged ${inr(duplicates[0].amount)} on ${shortDate(duplicates[0].date)} (${duplicates[0].merchant}). Add this one too?`}
+          confirmLabel="Add anyway"
+          onConfirm={() => { setDuplicates(null); commit(parseFloat(amount)); }}
+          onCancel={() => setDuplicates(null)}
+        />
       )}
     </div>
   );

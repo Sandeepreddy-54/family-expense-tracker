@@ -117,6 +117,28 @@ export function NavCard({ title, subtitle, onClick }) {
   );
 }
 
+/**
+ * A themed yes/no dialog using Organic's dialog-* classes — otherwise unused
+ * in this app, which relied on window.confirm for every prior "are you
+ * sure?" moment. Reserved for prompts that need to show real content (e.g.
+ * details of the specific thing being confirmed against), not simple
+ * irreversible deletes, which keep using window.confirm as before.
+ */
+export function ConfirmDialog({ title, body, confirmLabel = 'Continue', cancelLabel = 'Cancel', onConfirm, onCancel }) {
+  return (
+    <div className="dialog-backdrop" onClick={onCancel}>
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-title" id="confirm-dialog-title">{title}</div>
+        <div className="dialog-body">{body}</div>
+        <div className="dialog-actions">
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>{cancelLabel}</button>
+          <button type="button" className="btn btn-primary" onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** One transaction row, shared by Home, Activity and the card detail screen. */
 export function TxRow({ tx, onDelete, showDelete = false }) {
   return (
