@@ -390,26 +390,33 @@ export function useTracker() {
   }, []);
 
   const importSmsBatch = useCallback((text) => {
-    const parsed = parseSmsBatch(text);
-    if (!parsed.length) return 0;
-    setData((d) => ({
-      ...d,
-      smsQueue: [
-        ...d.smsQueue,
-        ...parsed.map((p, i) => ({
-          id: `import-${Date.now()}-${i}`,
-          raw: p.raw,
-          merchant: p.merchant,
-          amount: p.amount,
-          account: p.account,
-          category: p.category,
-          type: p.type,
-          date: p.date,
-          person: d.currentUser,
-        })),
-      ],
-    }));
-    return parsed.length;
+    // Parsed inside the updater (not from the outer `data` closure) so it
+    // reads accounts as of the latest state, same reason confirmSms reads
+    // d.smsQueue there rather than closing over a possibly-stale `data`.
+    let count = 0;
+    setData((d) => {
+      const parsed = parseSmsBatch(text, d.accounts);
+      count = parsed.length;
+      if (!parsed.length) return d;
+      return {
+        ...d,
+        smsQueue: [
+          ...d.smsQueue,
+          ...parsed.map((p, i) => ({
+            id: `import-${Date.now()}-${i}`,
+            raw: p.raw,
+            merchant: p.merchant,
+            amount: p.amount,
+            account: p.account,
+            category: p.category,
+            type: p.type,
+            date: p.date,
+            person: d.currentUser,
+          })),
+        ],
+      };
+    });
+    return count;
   }, []);
 
   const addIou = useCallback(({ direction, person: who, amount, note }) => {

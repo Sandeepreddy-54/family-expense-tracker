@@ -95,6 +95,31 @@ export default function SmsScreen({ t }) {
                 { value: 'priya', label: t.partnerName },
               ]}
             />
+
+            {t.data.accounts.length > 0 && (
+              <>
+                <div className="om-eyebrow" style={{ marginTop: 4, marginBottom: 0 }}>Account</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {t.data.accounts.map((a) => {
+                    const active = current.account === a.name;
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => t.updateSmsItem(index, { account: a.name })}
+                        aria-pressed={active}
+                        style={{
+                          padding: '6px 12px', borderRadius: 999, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit',
+                          border: `1.5px solid ${active ? 'var(--color-accent)' : 'var(--color-divider)'}`,
+                          background: active ? 'var(--color-accent-100)' : 'transparent',
+                          color: active ? 'var(--color-accent-800)' : 'var(--color-text)',
+                        }}
+                      >{t.personalizeAccount(a.name)}</button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
