@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { rangeFor, rangeLabel } from '../lib/dates.js';
 import { buildCsv, downloadCsv } from '../lib/csv.js';
+import { downloadBackup } from '../lib/backup.js';
 import { muted } from '../lib/format.js';
 import { Seg, SheetHeader } from '../components/ui.jsx';
 
@@ -93,6 +94,21 @@ export default function ExportScreen({ t }) {
           {status}
         </div>
       )}
+
+      <div className="hr" style={{ margin: 'var(--space-5) 0' }} />
+
+      <div style={{ fontSize: 12, color: muted(60), marginBottom: 'var(--space-3)' }}>
+        The CSV above is for reading — a full backup is for restoring everything (transactions, bills,
+        accounts, EMIs, IOUs, budgets) later via Settings → Restore backup, e.g. after switching phones.
+      </div>
+      <button
+        type="button"
+        onClick={() => downloadBackup(`family-expenses-backup-${new Date().toISOString().slice(0, 10)}.json`, t.data)}
+        className="btn btn-secondary btn-block"
+        style={{ margin: 0 }}
+      >
+        Download full backup (JSON)
+      </button>
     </div>
   );
 }

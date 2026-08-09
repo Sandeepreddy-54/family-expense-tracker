@@ -92,8 +92,9 @@ export default function SettingsTab({ t }) {
         <NavCard title="Bills & reminders" subtitle="Auto-detected recurring bills + your own" onClick={() => t.openScreen('bills')} />
         <NavCard title="Card EMIs" subtitle={t.monthlyEmiTotal > 0 ? `${t.activeEmis.length} active · ${inr(t.monthlyEmiTotal)}/mo across your cards` : 'Track EMIs on your credit cards'} onClick={() => t.openScreen('emis')} />
         <NavCard title="Loans & lending" subtitle="EMIs, ROI, and money with friends & family" onClick={() => t.openScreen('loans')} />
-        <NavCard title="Export data" subtitle="Week, month, or a custom range" onClick={() => t.openScreen('export')} />
+        <NavCard title="Export data" subtitle="Week, month, or a custom range, plus a full backup" onClick={() => t.openScreen('export')} />
         <NavCard title="Import past messages" subtitle="Paste old SMS to backfill a month or two" onClick={() => t.openScreen('import')} />
+        <NavCard title="Restore backup" subtitle="Bring back a full backup — e.g. after switching phones" onClick={() => t.openScreen('restoreBackup')} />
       </div>
 
       <div>
