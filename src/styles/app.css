@@ -55,15 +55,27 @@ html, body { overflow-x: hidden; max-width: 100%; }
    it — the device frame fills the page edge to edge instead of sitting
    centered with padding and marketing copy. */
 .om-page.is-frameless {
+  /* 100vh first as a fallback for browsers/WebViews that don't understand
+     100dvh — an unsupported value is ignored, not applied as 0, so listing
+     both means older engines still get a correct (if non-dynamic) height
+     instead of silently collapsing the whole chain down to content size. */
+  min-height: 100vh;
   min-height: 100dvh;
   padding: 0;
   gap: 0;
 }
 
+/* The device frame itself, in frameless mode — same vh/dvh fallback pair. */
+.frameless-frame {
+  height: 100vh;
+  height: 100dvh;
+}
+
 /* — in-device chrome — */
-.om-screen { flex: 1; overflow-y: auto; padding: 60px var(--space-4) 100px }
+.om-screen { flex: 1; min-height: 0; overflow-y: auto; padding: 60px var(--space-4) 100px }
 .om-sheet {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 60px var(--space-4) 30px;

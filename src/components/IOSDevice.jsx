@@ -51,8 +51,8 @@ function IOSStatusBar({ dark = false, time = '9:41' }) {
 export default function IOSDevice({ children, width = 402, height = 874, dark = false, frameless = false }) {
   if (frameless) {
     return (
-      <div style={{
-        width: '100%', height: '100dvh', position: 'relative',
+      <div className="frameless-frame" style={{
+        width: '100%', position: 'relative',
         background: dark ? '#000' : 'var(--color-bg)',
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
         paddingTop: 'env(safe-area-inset-top)',
