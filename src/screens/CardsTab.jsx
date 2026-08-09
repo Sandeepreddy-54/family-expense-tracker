@@ -9,7 +9,7 @@ export default function CardsTab({ t }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <div className="om-row" style={{ justifyContent: 'space-between' }}>
         <h2 style={{ fontSize: 20, margin: 0 }}>Cards &amp; accounts</h2>
-        <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12 }} onClick={() => t.openScreen('addAccount')}>
+        <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12 }} onClick={t.openNewAccount}>
           + Add account
         </button>
       </div>

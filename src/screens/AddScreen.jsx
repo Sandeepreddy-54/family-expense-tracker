@@ -120,7 +120,7 @@ export default function AddScreen({ t }) {
       {accountNames.length === 0 && (
         <div style={{ fontSize: 12, color: 'var(--color-accent-700)', marginBottom: 'var(--space-3)' }}>
           No accounts yet —{' '}
-          <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12, display: 'inline' }} onClick={() => t.openScreen('addAccount')}>
+          <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12, display: 'inline' }} onClick={t.openNewAccount}>
             add one
           </button>{' '}
           first.
