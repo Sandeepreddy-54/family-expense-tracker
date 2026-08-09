@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
 
 export default function AddAccountScreen({ t }) {
-  const [type, setType] = useState('credit');
-  const [name, setName] = useState('');
-  const [last4, setLast4] = useState('');
-  const [person, setPerson] = useState(t.data.currentUser);
-  const [limit, setLimit] = useState('');
-  const [statementDay, setStatementDay] = useState('');
-  const [dueDay, setDueDay] = useState('');
+  const editing = t.data.accounts.find((a) => a.id === t.editingAccountId) || null;
+
+  const [type, setType] = useState(editing?.type || 'credit');
+  const [name, setName] = useState(editing?.name || '');
+  const [last4, setLast4] = useState(editing?.last4 || '');
+  const [person, setPerson] = useState(editing?.person || t.data.currentUser);
+  const [limit, setLimit] = useState(editing?.limit ? String(editing.limit) : '');
+  const [statementDay, setStatementDay] = useState(editing?.statementDay ? String(editing.statementDay) : '');
+  const [dueDay, setDueDay] = useState(editing?.dueDay ? String(editing.dueDay) : '');
   const [error, setError] = useState('');
 
   const save = () => {
@@ -21,7 +23,8 @@ export default function AddAccountScreen({ t }) {
       if (!sDay || sDay < 1 || sDay > 31) return setError('Statement day must be 1–31.');
       if (!dDay || dDay < 1 || dDay > 31) return setError('Due day must be 1–31.');
     }
-    const ok = t.addAccount({ name, type, person, last4, limit, statementDay, dueDay });
+    const fields = { name, type, person, last4, limit, statementDay, dueDay };
+    const ok = editing ? t.editAccount(editing.id, fields) : t.addAccount(fields);
     if (ok) t.closeScreen();
     return undefined;
   };
@@ -31,7 +34,7 @@ export default function AddAccountScreen({ t }) {
       <SheetHeader
         onBack={t.closeScreen}
         backLabel="Cancel"
-        title="Add account"
+        title={editing ? 'Edit account' : 'Add account'}
         action={<button type="button" className="om-sheet-action om-sheet-action-strong" onClick={save}>Save</button>}
       />
 
@@ -59,7 +62,7 @@ export default function AddAccountScreen({ t }) {
       </div>
 
       <div className="field">
-        <label htmlFor="acct-last4">Last 4 digits (optional)</label>
+        <label htmlFor="acct-last4">Last 4 digits{type === 'credit' ? ' (recommended)' : ' (optional)'}</label>
         <input
           id="acct-last4"
           className="input"
@@ -68,6 +71,11 @@ export default function AddAccountScreen({ t }) {
           onChange={(e) => setLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
           placeholder="6142"
         />
+        {type === 'credit' && (
+          <div style={{ fontSize: 11, color: 'var(--color-accent-700)', marginTop: 4 }}>
+            Lets pasted/imported SMS auto-match to this exact card instead of a generic guess.
+          </div>
+        )}
       </div>
 
       <Eyebrow>Person</Eyebrow>

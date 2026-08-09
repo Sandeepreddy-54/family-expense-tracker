@@ -38,6 +38,19 @@ function loadData() {
   }
 }
 
+// Shared by addAccount/editAccount so the two can't drift out of sync.
+function validAccountFields({ name, type, person, limit, statementDay, dueDay }) {
+  if (!name?.trim() || !person) return false;
+  if (type === 'credit') {
+    if (!(parseFloat(limit) > 0)) return false;
+    const sDay = parseInt(statementDay, 10);
+    const dDay = parseInt(dueDay, 10);
+    if (!sDay || sDay < 1 || sDay > 31) return false;
+    if (!dDay || dDay < 1 || dDay > 31) return false;
+  }
+  return true;
+}
+
 export function useTracker() {
   // ── persisted household data ───────────────────────────────────────────────
   const [data, setData] = useState(loadData);
@@ -60,6 +73,7 @@ export function useTracker() {
   const [smsIndex, setSmsIndex] = useState(0);
   const [emiCardId, setEmiCardId] = useState(null);
   const [emiReturnScreen, setEmiReturnScreen] = useState('emis');
+  const [editingAccountId, setEditingAccountId] = useState(null);
 
   const openScreen = useCallback((name) => setScreen(name), []);
   const closeScreen = useCallback(() => setScreen(null), []);
@@ -70,6 +84,17 @@ export function useTracker() {
     setEmiCardId(cardId);
     setEmiReturnScreen(returnTo);
     setScreen('addEmi');
+  }, []);
+  // The Add/Edit account screen is shared — explicitly clear/set which account
+  // (if any) it's editing rather than letting it silently reuse whatever
+  // selectedAccountId was last left over from viewing an account's detail.
+  const openNewAccount = useCallback(() => {
+    setEditingAccountId(null);
+    setScreen('addAccount');
+  }, []);
+  const openEditAccount = useCallback((id) => {
+    setEditingAccountId(id);
+    setScreen('addAccount');
   }, []);
 
   // ── derived: identity ───────────────────────────────────────────────────────
@@ -366,21 +391,25 @@ export function useTracker() {
   }, []);
 
   const addAccount = useCallback(({ name, type, person, last4, limit, statementDay, dueDay }) => {
-    if (!name?.trim() || !person) return false;
-    if (type === 'credit') {
-      const lim = parseFloat(limit);
-      const sDay = parseInt(statementDay, 10);
-      const dDay = parseInt(dueDay, 10);
-      if (!lim || lim <= 0) return false;
-      if (!sDay || sDay < 1 || sDay > 31) return false;
-      if (!dDay || dDay < 1 || dDay > 31) return false;
-    }
+    if (!validAccountFields({ name, type, person, limit, statementDay, dueDay })) return false;
     setData((d) => ({
       ...d,
       accounts: [...d.accounts, {
         id: Date.now(), name: name.trim(), type, person, last4: (last4 || '').trim(),
         ...(type === 'credit' ? { limit: parseFloat(limit), statementDay: parseInt(statementDay, 10), dueDay: parseInt(dueDay, 10) } : {}),
       }],
+    }));
+    return true;
+  }, []);
+
+  const editAccount = useCallback((id, { name, type, person, last4, limit, statementDay, dueDay }) => {
+    if (!validAccountFields({ name, type, person, limit, statementDay, dueDay })) return false;
+    setData((d) => ({
+      ...d,
+      accounts: d.accounts.map((a) => (a.id !== id ? a : {
+        id, name: name.trim(), type, person, last4: (last4 || '').trim(),
+        ...(type === 'credit' ? { limit: parseFloat(limit), statementDay: parseInt(statementDay, 10), dueDay: parseInt(dueDay, 10) } : {}),
+      })),
     }));
     return true;
   }, []);
@@ -497,7 +526,7 @@ export function useTracker() {
     // navigation
     tab, setTab, screen, openScreen, closeScreen,
     txFilter, setTxFilter, smsIndex, setSmsIndex, openAccount, detailAccount,
-    emiCardId, emiReturnScreen, openAddEmi,
+    emiCardId, emiReturnScreen, openAddEmi, editingAccountId, openNewAccount, openEditAccount,
     // derived
     totals, heroTotal, trendPct, overallSpent, incomeTotal, netTotal, transactions, txGroups,
     budgets, budgetAlerts, bills, openBills, upcomingBills,
@@ -506,7 +535,7 @@ export function useTracker() {
     // actions
     addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms, importSmsBatch,
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,
-    addCardEmi, markEmiPaid, deleteCardEmi, addAccount, deleteAccount,
+    addCardEmi, markEmiPaid, deleteCardEmi, addAccount, editAccount, deleteAccount,
     addIou, markIouRepaid, toggleSetting, clearData,
     setCurrentUser: (u) => patch({ currentUser: u }),
     login, logout, syncPartner, unsyncPartner,

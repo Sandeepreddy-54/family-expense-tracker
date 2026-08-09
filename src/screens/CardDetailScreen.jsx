@@ -15,7 +15,11 @@ export default function CardDetailScreen({ t }) {
   if (account.type !== 'credit') {
     return (
       <div className="om-sheet">
-        <SheetHeader onBack={t.closeScreen} title={account.name} />
+        <SheetHeader
+          onBack={t.closeScreen}
+          title={account.name}
+          action={<button type="button" className="om-sheet-action" onClick={() => t.openEditAccount(account.id)}>Edit</button>}
+        />
 
         <div className="card elev-md" style={{ gap: 'var(--space-3)' }}>
           <div className="card-meta">{account.personLabel} · •••• {account.last4}</div>
@@ -54,7 +58,11 @@ export default function CardDetailScreen({ t }) {
 
   return (
     <div className="om-sheet">
-      <SheetHeader onBack={t.closeScreen} title={account.name} />
+      <SheetHeader
+        onBack={t.closeScreen}
+        title={account.name}
+        action={<button type="button" className="om-sheet-action" onClick={() => t.openEditAccount(account.id)}>Edit</button>}
+      />
 
       <div className="card elev-md" style={{ gap: 'var(--space-3)', background: 'var(--color-text)', color: 'var(--color-bg)' }}>
         <div className="card-meta" style={{ color: 'color-mix(in srgb, var(--color-bg) 65%, transparent)' }}>
