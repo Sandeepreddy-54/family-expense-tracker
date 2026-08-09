@@ -1,6 +1,24 @@
+import { useEffect, useState } from 'react';
 import IOSDevice from './components/IOSDevice.jsx';
 import { useTracker } from './state/useTracker.js';
 import { muted } from './lib/format.js';
+
+// Below this width there's no room (or reason) for the desktop "phone
+// mockup in a page" preview — the real device frame IS the viewport, so it
+// fills it edge to edge instead of overflowing a fixed 402px frame into it.
+const MOBILE_QUERY = '(max-width: 480px)';
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e) => setIsMobile(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
 
 import HomeTab from './screens/HomeTab.jsx';
 import TransactionsTab from './screens/TransactionsTab.jsx';
@@ -104,26 +122,29 @@ function TabBar({ t }) {
 
 export default function App() {
   const t = useTracker();
+  const isMobile = useIsMobile();
   const Tab = TABS[t.tab] || HomeTab;
   const Screen = t.screen ? SCREENS[t.screen] : null;
   const loggedIn = t.data.profile.loggedIn;
 
   return (
-    <div className="om-page">
-      <div className="om-page-intro">
-        <h1>Family Expense Tracker</h1>
-        <p>
-          {loggedIn
-            ? `One shared app for both of you — Android reads payment SMS directly; iPhone forwards bank texts in
-               (Settings has both). Every expense is tagged by person so ${t.youName} and ${t.partnerName} can see
-               combined or individual spend anywhere.`
-            : `One shared app for both of you — Android reads payment SMS directly; iPhone forwards bank texts in
-               (Settings has both). Every expense is tagged by person so you can see combined or individual spend
-               anywhere.`}
-        </p>
-      </div>
+    <div className={`om-page${isMobile ? ' is-frameless' : ''}`}>
+      {!isMobile && (
+        <div className="om-page-intro">
+          <h1>Family Expense Tracker</h1>
+          <p>
+            {loggedIn
+              ? `One shared app for both of you — Android reads payment SMS directly; iPhone forwards bank texts in
+                 (Settings has both). Every expense is tagged by person so ${t.youName} and ${t.partnerName} can see
+                 combined or individual spend anywhere.`
+              : `One shared app for both of you — Android reads payment SMS directly; iPhone forwards bank texts in
+                 (Settings has both). Every expense is tagged by person so you can see combined or individual spend
+                 anywhere.`}
+          </p>
+        </div>
+      )}
 
-      <IOSDevice>
+      <IOSDevice frameless={isMobile}>
         <div style={{
           flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
           background: 'var(--color-bg)', color: 'var(--color-text)',
@@ -142,9 +163,11 @@ export default function App() {
         </div>
       </IOSDevice>
 
-      <div className="om-page-foot">
-        Prototype — SMS parsing, bank sync and payments are simulated for the demo.
-      </div>
+      {!isMobile && (
+        <div className="om-page-foot">
+          Prototype — SMS parsing, bank sync and payments are simulated for the demo.
+        </div>
+      )}
     </div>
   );
 }
