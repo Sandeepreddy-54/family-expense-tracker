@@ -36,6 +36,7 @@ import LoginScreen from './screens/LoginScreen.jsx';
 import EmisScreen from './screens/EmisScreen.jsx';
 import AddEmiScreen from './screens/AddEmiScreen.jsx';
 import ImportScreen from './screens/ImportScreen.jsx';
+import AddAccountScreen from './screens/AddAccountScreen.jsx';
 
 const TABS = {
   home: HomeTab,
@@ -56,6 +57,7 @@ const SCREENS = {
   emis: EmisScreen,
   addEmi: AddEmiScreen,
   import: ImportScreen,
+  addAccount: AddAccountScreen,
 };
 
 const ICONS = {

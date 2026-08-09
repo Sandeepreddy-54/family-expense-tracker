@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  BILLS_INITIAL, BUDGETS_DATA, CARD_EMIS_INITIAL, CARDS_DATA, DEFAULT_OVERALL_BUDGET,
+  ACCOUNTS_INITIAL, BILLS_INITIAL, BUDGETS_DATA, CARD_EMIS_INITIAL, DEFAULT_OVERALL_BUDGET,
   DEFAULT_PROFILE, DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, SMS_INITIAL,
   TODAY, TODAY_ISO, TX_INITIAL, catMeta,
 } from '../data/seed.js';
-import { categoryTotals, monthTotal } from '../lib/totals.js';
+import { categoryTotals, monthTotal, realMonthlyTotal } from '../lib/totals.js';
 import { daysUntil, inr, muted, shortDate } from '../lib/format.js';
 import { byDateDesc, groupByDate } from '../lib/dates.js';
 import { deriveEmi } from '../lib/emi.js';
+import { cycleSpend, lastStatementDate, nextOccurrence } from '../lib/cardCycle.js';
 import { parseSmsBatch } from '../lib/smsParser.js';
 
 const STORAGE_KEY = 'family-expense-tracker/v1';
@@ -18,6 +19,7 @@ const freshData = () => ({
   bills: BILLS_INITIAL,
   ious: IOU_INITIAL,
   cardEmis: CARD_EMIS_INITIAL,
+  accounts: ACCOUNTS_INITIAL,
   budgetOverrides: {},
   overallBudget: DEFAULT_OVERALL_BUDGET,
   settings: DEFAULT_SETTINGS,
@@ -54,7 +56,7 @@ export function useTracker() {
   const [tab, setTab] = useState('home');
   const [screen, setScreen] = useState(null);
   const [txFilter, setTxFilter] = useState('all');
-  const [selectedCardId, setSelectedCardId] = useState(null);
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [smsIndex, setSmsIndex] = useState(0);
   const [emiCardId, setEmiCardId] = useState(null);
   const [emiReturnScreen, setEmiReturnScreen] = useState('emis');
@@ -160,34 +162,52 @@ export function useTracker() {
   const openBills = bills.filter((b) => !b.paid);
   const upcomingBills = openBills.filter((b) => b.days <= 7);
 
-  // ── derived: cards ─────────────────────────────────────────────────────────
-  const cards = useMemo(
-    () => CARDS_DATA.map((c) => {
-      const utilPct = Math.round((c.outstanding / c.limit) * 100);
+  // ── derived: accounts (bank + credit card) ────────────────────────────────
+  const accounts = useMemo(
+    () => data.accounts.map((a) => {
+      const personLabel = a.person === 'you' ? youName : partnerName;
+      if (a.type !== 'credit') {
+        const monthSpend = realMonthlyTotal(
+          data.transactions.filter((tx) => tx.account === a.name),
+          TODAY_ISO.slice(0, 7),
+        );
+        return { ...a, personLabel, monthSpend, monthSpendLabel: inr(monthSpend) };
+      }
+      const spend = cycleSpend(data.transactions, a, TODAY_ISO);
+      const utilPct = a.limit ? Math.round((spend / a.limit) * 100) : 0;
+      const statementIso = lastStatementDate(a.statementDay, TODAY_ISO);
+      const dueIso = nextOccurrence(a.dueDay, TODAY_ISO);
       return {
-        ...c,
-        personLabel: c.person === 'you' ? youName : partnerName,
+        ...a,
+        personLabel,
+        cycleSpend: spend,
+        cycleSpendLabel: inr(spend),
         utilPct,
         utilLabel: `${utilPct}%`,
         tagBg: utilPct > 60 ? 'var(--color-accent-200)' : 'var(--color-accent-2-100)',
         tagFg: utilPct > 60 ? 'var(--color-accent-800)' : 'var(--color-accent-2-800)',
         barColor: utilPct > 60 ? 'var(--color-accent-600)' : 'var(--color-accent-2-500)',
-        minDueLabel: inr(c.minDue),
+        statementDate: statementIso,
+        statementLabel: shortDate(statementIso),
+        dueDate: dueIso,
+        dueLabel: shortDate(dueIso),
       };
     }),
-    [youName, partnerName],
+    [data.accounts, data.transactions, youName, partnerName],
   );
-  const cardsOutstanding = CARDS_DATA.reduce((s, c) => s + c.outstanding, 0);
-  const cardsLimit = CARDS_DATA.reduce((s, c) => s + c.limit, 0);
-  const detailCard = cards.find((c) => c.id === selectedCardId) || null;
+  const creditAccounts = useMemo(() => accounts.filter((a) => a.type === 'credit'), [accounts]);
+  const bankAccounts = useMemo(() => accounts.filter((a) => a.type !== 'credit'), [accounts]);
+  const cardsCycleSpend = creditAccounts.reduce((s, a) => s + a.cycleSpend, 0);
+  const cardsLimit = creditAccounts.reduce((s, a) => s + a.limit, 0);
+  const detailAccount = accounts.find((a) => a.id === selectedAccountId) || null;
 
   // ── derived: card EMIs ──────────────────────────────────────────────────────
   const emis = useMemo(
     () => data.cardEmis.map(deriveEmi).map((e) => {
-      const card = cards.find((c) => c.id === e.cardId);
+      const card = creditAccounts.find((c) => c.id === e.cardId);
       return { ...e, cardName: card ? card.name : 'Unknown card' };
     }).sort((a, b) => (a.nextDueDate || '9999') < (b.nextDueDate || '9999') ? -1 : 1),
-    [data.cardEmis, cards],
+    [data.cardEmis, creditAccounts],
   );
   const activeEmis = emis.filter((e) => !e.completed);
   const monthlyEmiTotal = activeEmis.reduce((s, e) => s + e.emiAmount, 0);
@@ -345,6 +365,30 @@ export function useTracker() {
     setData((d) => ({ ...d, cardEmis: d.cardEmis.filter((e) => e.id !== id) }));
   }, []);
 
+  const addAccount = useCallback(({ name, type, person, last4, limit, statementDay, dueDay }) => {
+    if (!name?.trim() || !person) return false;
+    if (type === 'credit') {
+      const lim = parseFloat(limit);
+      const sDay = parseInt(statementDay, 10);
+      const dDay = parseInt(dueDay, 10);
+      if (!lim || lim <= 0) return false;
+      if (!sDay || sDay < 1 || sDay > 31) return false;
+      if (!dDay || dDay < 1 || dDay > 31) return false;
+    }
+    setData((d) => ({
+      ...d,
+      accounts: [...d.accounts, {
+        id: Date.now(), name: name.trim(), type, person, last4: (last4 || '').trim(),
+        ...(type === 'credit' ? { limit: parseFloat(limit), statementDay: parseInt(statementDay, 10), dueDay: parseInt(dueDay, 10) } : {}),
+      }],
+    }));
+    return true;
+  }, []);
+
+  const deleteAccount = useCallback((id) => {
+    setData((d) => ({ ...d, accounts: d.accounts.filter((a) => a.id !== id) }));
+  }, []);
+
   const importSmsBatch = useCallback((text) => {
     const parsed = parseSmsBatch(text);
     if (!parsed.length) return 0;
@@ -419,8 +463,8 @@ export function useTracker() {
 
   const txGroups = useMemo(() => groupByDate(transactions), [transactions]);
 
-  const openCard = useCallback((id) => {
-    setSelectedCardId(id);
+  const openAccount = useCallback((id) => {
+    setSelectedAccountId(id);
     setScreen('cardDetail');
   }, []);
 
@@ -445,17 +489,17 @@ export function useTracker() {
     personLabel: person === 'combined' ? 'Combined' : person === 'you' ? 'You' : partnerName,
     // navigation
     tab, setTab, screen, openScreen, closeScreen,
-    txFilter, setTxFilter, smsIndex, setSmsIndex, openCard, detailCard,
+    txFilter, setTxFilter, smsIndex, setSmsIndex, openAccount, detailAccount,
     emiCardId, emiReturnScreen, openAddEmi,
     // derived
     totals, heroTotal, trendPct, overallSpent, incomeTotal, netTotal, transactions, txGroups,
     budgets, budgetAlerts, bills, openBills, upcomingBills,
-    cards, cardsOutstanding, cardsLimit, notifications, hasNotifDot,
+    accounts, creditAccounts, bankAccounts, cardsCycleSpend, cardsLimit, notifications, hasNotifDot,
     emis, activeEmis, monthlyEmiTotal, emiCardsCount,
     // actions
     addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms, importSmsBatch,
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,
-    addCardEmi, markEmiPaid, deleteCardEmi,
+    addCardEmi, markEmiPaid, deleteCardEmi, addAccount, deleteAccount,
     addIou, markIouRepaid, toggleSetting, clearData,
     setCurrentUser: (u) => patch({ currentUser: u }),
     login, logout, syncPartner, unsyncPartner,

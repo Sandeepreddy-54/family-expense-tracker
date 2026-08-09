@@ -76,12 +76,11 @@ export const BUDGETS_DATA = [
 
 export const DEFAULT_OVERALL_BUDGET = 80000;
 
-export const CARDS_DATA = [
-  { id: 'hdfc', name: 'HDFC Regalia', person: 'you', personLabel: 'Rohan', last4: '4521', limit: 300000, outstanding: 84500, dueDate: 'Aug 28', statementDate: '12th', minDue: 4200 },
-  { id: 'icici', name: 'ICICI Amazon Pay', person: 'priya', personLabel: 'Priya', last4: '7788', limit: 150000, outstanding: 32800, dueDate: 'Aug 22', statementDate: '5th', minDue: 1650 },
-];
-
-export const ACCOUNT_NAMES = ['PhonePe (Rohan)', 'PhonePe (Priya)', 'HDFC Regalia', 'ICICI Amazon Pay'];
+// Bank accounts and credit cards — starts empty, same as every other entity
+// this session. limit/statementDay/dueDay only exist on type: 'credit' rows;
+// cycle-to-date spend is computed live from real transactions in
+// lib/cardCycle.js, never stored (see useTracker.js's `accounts` derivation).
+export const ACCOUNTS_INITIAL = [];
 
 // Credit-card EMIs — a large purchase converted to fixed monthly installments
 // on a specific card. `paidMonths` is how many instalments have gone through;
