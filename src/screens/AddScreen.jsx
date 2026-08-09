@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { ACCOUNT_NAMES, CATS, INCOME_CATS } from '../data/seed.js';
 import { Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'];
-
 export default function AddScreen({ t }) {
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('expense');
@@ -15,16 +13,6 @@ export default function AddScreen({ t }) {
 
   const categories = type === 'income' ? INCOME_CATS : CATS;
   const accountNames = ACCOUNT_NAMES.map((name) => t.personalizeAccount(name));
-
-  const pressKey = (k) => {
-    setAmount((a) => {
-      if (k === '⌫') return a.slice(0, -1);
-      if (k === '.' && a.includes('.')) return a;
-      if (a.length >= 8) return a;
-      return a + k;
-    });
-    setError('');
-  };
 
   const save = () => {
     const value = parseFloat(amount);
@@ -65,8 +53,29 @@ export default function AddScreen({ t }) {
         ]}
       />
 
-      <div style={{ textAlign: 'center', fontFamily: 'var(--font-heading)', fontSize: 44, margin: 'var(--space-4) 0' }}>
-        ₹{amount || '0'}
+      <div style={{ textAlign: 'center', marginTop: 6 }}>
+        <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12 }} onClick={() => t.openScreen('import')}>
+          Paste from SMS instead
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, margin: 'var(--space-4) 0' }}>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 44 }}>₹</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          value={amount}
+          onChange={(e) => { setAmount(e.target.value); setError(''); }}
+          placeholder="0"
+          autoFocus
+          aria-label="Amount"
+          style={{
+            width: 160, fontFamily: 'var(--font-heading)', fontSize: 44, color: 'var(--color-text)',
+            border: 'none', background: 'transparent', padding: 0, minHeight: 'auto',
+          }}
+        />
       </div>
 
       <Seg
@@ -144,21 +153,6 @@ export default function AddScreen({ t }) {
           {error}
         </div>
       )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 'var(--space-4)' }}>
-        {KEYS.map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => pressKey(k)}
-            aria-label={k === '⌫' ? 'Delete last digit' : k}
-            style={{
-              height: 48, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-divider)',
-              background: 'var(--color-surface)', fontSize: 18, cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >{k}</button>
-        ))}
-      </div>
     </div>
   );
 }

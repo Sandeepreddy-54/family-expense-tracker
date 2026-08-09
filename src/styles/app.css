@@ -8,6 +8,16 @@
    never be able to force the real page wider than the viewport. */
 html, body { overflow-x: hidden; max-width: 100%; }
 
+/* Every numeric field in the app is typed with the device's own keyboard —
+   the browser's tiny increment/decrement spinner arrows aren't useful here
+   and look out of place next to the custom styling. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
+
 .om-row { display: flex; align-items: center }
 
 .om-bar-track {
