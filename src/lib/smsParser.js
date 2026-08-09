@@ -14,6 +14,10 @@ const TO_MERCHANT_RE = /\bto\s+([A-Z][A-Z0-9 &.'\-]{2,40}?)\s*(?:\n|\s+on\b|$)/i
 const CREDIT_WORDS = /credited|deposited|received|refunded|refund|cashback|reversed/i;
 const DEBIT_WORDS = /debited|spent|used for|paid|withdrawn|purchase|\bsent\b/i;
 const KNOWN_ACCOUNTS = ['PhonePe', 'HDFC', 'ICICI', 'SBI'];
+// Card/account last-4 digits, e.g. "Card 6142", "A/C *5777", "Credit Card
+// XX4521", "Card ending 7788" — the \D gap absorbs whatever separator/mask
+// (space, *, XX, "ending") sits between the marker word and the digits.
+const LAST4_RE = /(?:card|a\/?c|acc(?:ount)?|ending)\D{0,15}?(\d{4})\b/i;
 // DD-MMM-YY(YY) / DD-MM-YY(YY) style, e.g. "06-Aug-26" or "08/08/26".
 const DATE_RE = /\b(\d{1,2})[-/](\w{3}|\d{1,2})[-/](\d{2,4})\b/;
 // YYYY-MM-DD style, e.g. card-transaction alerts stamping "2026-08-09:10:05:27".
@@ -65,7 +69,21 @@ function guessMerchant(raw) {
   return 'Unknown merchant';
 }
 
-function guessAccount(raw) {
+// Prefer an exact match against the user's real configured accounts (by last
+// 4 digits) over the generic bank-name guess — "HDFC Credit Card" instead of
+// just "HDFC", which is what actually lets cycle-spend tracking find it.
+function guessAccount(raw, accounts = []) {
+  const last4Match = raw.match(LAST4_RE);
+  if (last4Match) {
+    const candidates = accounts.filter((a) => a.last4 && a.last4 === last4Match[1]);
+    if (candidates.length === 1) return candidates[0].name;
+    if (candidates.length > 1) {
+      // Same last 4 on more than one account (rare) — break the tie with
+      // whichever account's own name is also mentioned in the message.
+      const byName = candidates.find((a) => raw.toLowerCase().includes(a.name.toLowerCase().split(' ')[0]));
+      return (byName || candidates[0]).name;
+    }
+  }
   return KNOWN_ACCOUNTS.find((k) => raw.toLowerCase().includes(k.toLowerCase())) || 'Unknown';
 }
 
@@ -97,7 +115,7 @@ function guessDate(raw) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-export function parseSmsMessage(rawInput) {
+export function parseSmsMessage(rawInput, accounts = []) {
   const raw = rawInput.replace(WHATSAPP_PREFIX_RE, '');
   const amountMatch = raw.match(AMOUNT_RE);
   const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
@@ -109,13 +127,13 @@ export function parseSmsMessage(rawInput) {
     raw,
     merchant,
     amount,
-    account: guessAccount(raw),
+    account: guessAccount(raw, accounts),
     category: guessCategory(raw, merchant),
     type,
     date: guessDate(raw),
   };
 }
 
-export function parseSmsBatch(text) {
-  return splitMessages(text).map(parseSmsMessage);
+export function parseSmsBatch(text, accounts = []) {
+  return splitMessages(text).map((raw) => parseSmsMessage(raw, accounts));
 }
