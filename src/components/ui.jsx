@@ -154,7 +154,14 @@ export function ConfirmDialog({ title, body, confirmLabel = 'Continue', cancelLa
 /** One transaction row, shared by Home, Activity and the card detail screen. */
 export function TxRow({ tx, onDelete, showDelete = false }) {
   return (
-    <div className="om-row" style={{ justifyContent: 'space-between', padding: 'var(--space-2) 0', borderBottom: '1px solid var(--color-divider)', gap: 8 }}>
+    <div
+      className="om-row"
+      style={{
+        justifyContent: 'space-between', padding: 'var(--space-2)', margin: '0 calc(var(--space-2) * -1)',
+        borderBottom: '1px solid var(--color-divider)', borderRadius: 'var(--radius-sm)', gap: 8,
+        background: tx.isLarge ? 'color-mix(in srgb, var(--color-accent-700) 6%, transparent)' : 'transparent',
+      }}
+    >
       <div className="om-row" style={{ gap: 10, minWidth: 0 }}>
         <Badge meta={tx} size={30} font={11} />
         <div style={{ minWidth: 0 }}>
