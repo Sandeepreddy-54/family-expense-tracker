@@ -84,10 +84,6 @@ export const TX_INITIAL = [];
 // (or from a pasted backfill), not from fixtures.
 export const SMS_INITIAL = [];
 
-export const SMS_CATEGORY_CHOICES = [
-  'Food & Dining', 'Shopping', 'Entertainment', 'Groceries', 'Transport', 'Bills & Utilities',
-];
-
 export const LOANS_DATA = [
   { id: 'home', name: 'Home Loan — SBI', principal: 2500000, outstanding: 1870000, roi: 8.6, emi: 21500, tenureLeft: '9 yrs 4 mo', dueDate: 'Aug 5' },
   { id: 'car', name: 'Car Loan — HDFC', principal: 600000, outstanding: 210000, roi: 9.25, emi: 12800, tenureLeft: '1 yr 6 mo', dueDate: 'Aug 7' },
