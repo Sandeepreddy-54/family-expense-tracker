@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SMS_CATEGORY_CHOICES, TODAY_ISO } from '../data/seed.js';
+import { TODAY_ISO } from '../data/seed.js';
 import { inr, muted, shortDate } from '../lib/format.js';
 import { ConfirmDialog, Seg } from '../components/ui.jsx';
 import { findDuplicates } from '../lib/duplicates.js';
@@ -74,22 +74,21 @@ export default function SmsScreen({ t }) {
 
             <div className="om-eyebrow" style={{ marginTop: 4, marginBottom: 0 }}>Category</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {SMS_CATEGORY_CHOICES.map((name) => {
-                const m = t.catMeta(name);
-                const active = current.category === name;
+              {t.data.categories.map((c) => {
+                const active = current.category === c.name;
                 return (
                   <button
-                    key={name}
+                    key={c.name}
                     type="button"
-                    onClick={() => t.updateSmsItem(index, { category: name })}
+                    onClick={() => t.updateSmsItem(index, { category: c.name })}
                     aria-pressed={active}
                     style={{
                       padding: '6px 12px', borderRadius: 999, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit',
                       border: `1.5px solid ${active ? 'var(--color-accent)' : 'var(--color-divider)'}`,
-                      background: active ? m.bg : 'transparent',
-                      color: active ? m.fg : 'var(--color-text)',
+                      background: active ? c.bg : 'transparent',
+                      color: active ? c.fg : 'var(--color-text)',
                     }}
-                  >{name}</button>
+                  >{c.name}</button>
                 );
               })}
             </div>
