@@ -1,4 +1,4 @@
-import { SMS_CATEGORY_CHOICES, catMeta } from '../data/seed.js';
+import { SMS_CATEGORY_CHOICES } from '../data/seed.js';
 import { muted } from '../lib/format.js';
 import { Seg } from '../components/ui.jsx';
 
@@ -66,7 +66,7 @@ export default function SmsScreen({ t }) {
             <div className="om-eyebrow" style={{ marginTop: 4, marginBottom: 0 }}>Category</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {SMS_CATEGORY_CHOICES.map((name) => {
-                const m = catMeta(name);
+                const m = t.catMeta(name);
                 const active = current.category === name;
                 return (
                   <button

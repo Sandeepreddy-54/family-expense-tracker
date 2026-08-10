@@ -1,5 +1,3 @@
-import { CATS } from '../data/seed.js';
-
 const esc = (v) => {
   const s = String(v ?? '');
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -10,7 +8,7 @@ const row = (cells) => cells.map(esc).join(',');
  * Build the export the design promises: "all transactions, budgets, and card
  * summaries — combined and per person — as a CSV".
  */
-export function buildCsv({ transactions, budgets, creditAccounts, totals, range, label, youName = 'You', partnerName = 'Partner' }) {
+export function buildCsv({ transactions, budgets, creditAccounts, totals, categories, range, label, youName = 'You', partnerName = 'Partner' }) {
   const lines = [];
   const personalizeAccount = (name) => name.replace('Rohan', youName).replace('Priya', partnerName);
 
@@ -38,7 +36,7 @@ export function buildCsv({ transactions, budgets, creditAccounts, totals, range,
 
   lines.push(row(['CATEGORY TOTALS (month to date)']));
   lines.push(row(['Category', 'Combined (INR)', `${youName} (INR)`, `${partnerName} (INR)`, 'Budget (INR)', 'Used %']));
-  CATS.forEach((c) => {
+  categories.forEach((c) => {
     const t = totals[c.name];
     const b = budgets.find((x) => x.category === c.name);
     const budget = b ? b.budget : '';

@@ -7,7 +7,12 @@
 export const TODAY = new Date('2026-08-06');
 export const TODAY_ISO = '2026-08-06';
 
-export const CATS = [
+// Starting set of expense categories — seeds `data.categories` on first load.
+// From then on it's fully user-editable (add/remove in Settings), so this is
+// just a sensible default, not a fixed list. "Other" is the one category that
+// can't be removed — it's the reassignment target when another category is
+// deleted while transactions or bills still use it.
+export const CATEGORIES_INITIAL = [
   { name: 'Food & Dining', letter: 'F', bg: 'var(--color-accent-100)', fg: 'var(--color-accent-800)', bg2: 'var(--color-accent-500)' },
   { name: 'Groceries', letter: 'G', bg: 'var(--color-accent-2-100)', fg: 'var(--color-accent-2-800)', bg2: 'var(--color-accent-2-500)' },
   { name: 'Transport', letter: 'T', bg: 'var(--color-neutral-200)', fg: 'var(--color-neutral-900)', bg2: 'var(--color-neutral-500)' },
@@ -30,49 +35,27 @@ export const INCOME_CATS = [
   { name: 'Other Income', letter: 'OI', bg: 'var(--color-accent-2-300)', fg: 'var(--color-accent-2-900)', bg2: 'var(--color-accent-2-700)' },
 ];
 
-export const catMeta = (name) =>
-  CATS.find((c) => c.name === name) ||
-  INCOME_CATS.find((c) => c.name === name) ||
-  CATS[CATS.length - 1];
-
-// Month-to-date spend per category. The visible transaction list only covers the
-// last week, so these are the full-month figures; `deriveBaselines` in
-// lib/totals.js backs the listed transactions out of them, and everything the
-// user adds or deletes from here on moves the numbers for real.
-//
-// Starts at zero — real households build these up from scratch (or from an
-// SMS backfill via the Import screen), not from a fixed baseline.
-export const CAT_TOTALS = {
-  'Food & Dining': { combined: 0, you: 0, priya: 0 },
-  Groceries: { combined: 0, you: 0, priya: 0 },
-  Transport: { combined: 0, you: 0, priya: 0 },
-  Shopping: { combined: 0, you: 0, priya: 0 },
-  'Bills & Utilities': { combined: 0, you: 0, priya: 0 },
-  Entertainment: { combined: 0, you: 0, priya: 0 },
-  Health: { combined: 0, you: 0, priya: 0 },
-  Travel: { combined: 0, you: 0, priya: 0 },
-  Rent: { combined: 0, you: 0, priya: 0 },
-  Subscriptions: { combined: 0, you: 0, priya: 0 },
-  Other: { combined: 0, you: 0, priya: 0 },
-};
-
 // No spend history yet — the Home hero hides the trend line until this is
 // nonzero (see trendPct in useTracker.js).
 export const LAST_MONTH = { combined: 0, you: 0, priya: 0 };
 
-export const BUDGETS_DATA = [
-  { category: 'Food & Dining', budget: 10000 },
-  { category: 'Groceries', budget: 9000 },
-  { category: 'Transport', budget: 5000 },
-  { category: 'Shopping', budget: 9000 },
-  { category: 'Bills & Utilities', budget: 7000 },
-  { category: 'Entertainment', budget: 2500 },
-  { category: 'Health', budget: 2000 },
-  { category: 'Travel', budget: 10000 },
-  { category: 'Rent', budget: 20000 },
-  { category: 'Subscriptions', budget: 1500 },
-  { category: 'Other', budget: 1500 },
-];
+// Default monthly budget per starting category — only used until the user
+// sets their own (data.budgetOverrides). Categories added later that aren't
+// in this map fall back to FALLBACK_BUDGET.
+export const DEFAULT_BUDGETS = {
+  'Food & Dining': 10000,
+  Groceries: 9000,
+  Transport: 5000,
+  Shopping: 9000,
+  'Bills & Utilities': 7000,
+  Entertainment: 2500,
+  Health: 2000,
+  Travel: 10000,
+  Rent: 20000,
+  Subscriptions: 1500,
+  Other: 1500,
+};
+export const FALLBACK_BUDGET = 2000;
 
 export const DEFAULT_OVERALL_BUDGET = 80000;
 
@@ -153,20 +136,16 @@ export const NET_WORTH = {
 
 export const DEFAULT_SETTINGS = {
   smsAndroid: true,
-  iphoneForward: true,
   notifNewTx: true,
   notifBudget: true,
   notifBills: true,
   notifWeekly: false,
-  shared: true,
 };
 
 export const DEFAULT_PROFILE = {
   loggedIn: false,
   name: '',
   partnerName: '',
-  syncCode: '',
-  synced: false,
 };
 
 export const NOTIF_TOGGLES = [
