@@ -13,6 +13,7 @@ import { cycleSpend, lastStatementDate, nextOccurrence } from '../lib/cardCycle.
 import { parseSmsBatch } from '../lib/smsParser.js';
 
 const STORAGE_KEY = 'family-expense-tracker/v1';
+const HIGH_AMOUNT_THRESHOLD = 2000;
 
 const freshData = () => ({
   transactions: TX_INITIAL,
@@ -112,11 +113,16 @@ export function useTracker() {
     () => [...data.transactions].sort(byDateDesc).map((tx) => {
       const m = catMeta(tx.category);
       const isIncome = tx.type === 'income';
+      // Large expenses get called out in the same warm "attention" color the
+      // rest of the app already uses for over-budget states, so a big spend
+      // is easy to spot while scanning a long list.
+      const isLarge = !isIncome && tx.amount > HIGH_AMOUNT_THRESHOLD;
       return {
         ...tx,
         letter: m.letter, bg: m.bg, fg: m.fg,
         amountLabel: (isIncome ? '+' : '−') + inr(tx.amount),
-        amountColor: isIncome ? 'var(--color-accent-2-700)' : 'var(--color-text)',
+        amountColor: isIncome ? 'var(--color-accent-2-700)' : isLarge ? 'var(--color-accent-700)' : 'var(--color-text)',
+        isLarge,
         subLabel: `${tx.category} · ${personalizeAccount(tx.account)}`,
         sourceLabel: tx.source === 'auto' ? 'Auto' : 'Manual',
         canDelete: tx.person === data.currentUser,
