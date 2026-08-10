@@ -38,6 +38,7 @@ import AddEmiScreen from './screens/AddEmiScreen.jsx';
 import ImportScreen from './screens/ImportScreen.jsx';
 import AddAccountScreen from './screens/AddAccountScreen.jsx';
 import RestoreBackupScreen from './screens/RestoreBackupScreen.jsx';
+import CategoriesScreen from './screens/CategoriesScreen.jsx';
 
 const TABS = {
   home: HomeTab,
@@ -60,6 +61,7 @@ const SCREENS = {
   import: ImportScreen,
   addAccount: AddAccountScreen,
   restoreBackup: RestoreBackupScreen,
+  categories: CategoriesScreen,
 };
 
 const ICONS = {
@@ -119,7 +121,7 @@ function TabBar({ t }) {
         </div>
       </button>
       <TabButton id="cards" label="Cards" active={t.tab === 'cards'} onClick={() => t.setTab('cards')} />
-      <TabButton id="more" label="Settings" active={t.tab === 'more'} onClick={() => t.setTab('more')} />
+      <TabButton id="more" label="More" active={t.tab === 'more'} onClick={() => t.setTab('more')} />
     </nav>
   );
 }

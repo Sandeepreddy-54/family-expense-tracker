@@ -3,7 +3,7 @@
 // not a lossless round-trip format. profile/settings/currentUser are left
 // out on purpose: restoring a backup should bring your data back, not change
 // who's logged in on this device or its notification/toggle preferences.
-const BACKUP_KEYS = ['transactions', 'smsQueue', 'bills', 'ious', 'cardEmis', 'accounts', 'budgetOverrides', 'overallBudget'];
+const BACKUP_KEYS = ['transactions', 'smsQueue', 'bills', 'ious', 'cardEmis', 'accounts', 'categories', 'budgetOverrides', 'overallBudget'];
 
 export function buildBackup(data) {
   const snapshot = {};
@@ -20,6 +20,7 @@ export function backupSummary(backup) {
     accounts: d.accounts?.length || 0,
     cardEmis: d.cardEmis?.length || 0,
     ious: d.ious?.length || 0,
+    categories: d.categories?.length || 0,
   };
 }
 

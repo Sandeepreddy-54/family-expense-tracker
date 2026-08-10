@@ -1,11 +1,20 @@
-import { SMS_CATEGORY_CHOICES, catMeta } from '../data/seed.js';
-import { muted } from '../lib/format.js';
-import { Seg } from '../components/ui.jsx';
+import { useState } from 'react';
+import { SMS_CATEGORY_CHOICES, TODAY_ISO } from '../data/seed.js';
+import { inr, muted, shortDate } from '../lib/format.js';
+import { ConfirmDialog, Seg } from '../components/ui.jsx';
+import { findDuplicates } from '../lib/duplicates.js';
 
 export default function SmsScreen({ t }) {
   const queue = t.data.smsQueue;
   const index = Math.min(t.smsIndex, Math.max(queue.length - 1, 0));
   const current = queue[index] || null;
+  const [duplicates, setDuplicates] = useState(null);
+
+  const tryConfirm = () => {
+    const dupes = findDuplicates(t.data.transactions, current.amount, current.date || TODAY_ISO, current.type || 'expense');
+    if (dupes.length > 0) { setDuplicates(dupes); return; }
+    t.confirmSms(index);
+  };
 
   return (
     <div className="om-sheet">
@@ -66,7 +75,7 @@ export default function SmsScreen({ t }) {
             <div className="om-eyebrow" style={{ marginTop: 4, marginBottom: 0 }}>Category</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {SMS_CATEGORY_CHOICES.map((name) => {
-                const m = catMeta(name);
+                const m = t.catMeta(name);
                 const active = current.category === name;
                 return (
                   <button
@@ -124,8 +133,18 @@ export default function SmsScreen({ t }) {
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" onClick={() => t.discardSms(index)} className="btn btn-secondary" style={{ flex: 1 }}>Discard</button>
-            <button type="button" onClick={() => t.confirmSms(index)} className="btn btn-primary" style={{ flex: 1 }}>Confirm</button>
+            <button type="button" onClick={tryConfirm} className="btn btn-primary" style={{ flex: 1 }}>Confirm</button>
           </div>
+
+          {duplicates && (
+            <ConfirmDialog
+              title="Possible duplicate"
+              body={`You already logged ${inr(duplicates[0].amount)} on ${shortDate(duplicates[0].date)} (${duplicates[0].merchant}). Add this one too?`}
+              confirmLabel="Add anyway"
+              onConfirm={() => { setDuplicates(null); t.confirmSms(index); }}
+              onCancel={() => setDuplicates(null)}
+            />
+          )}
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: 'var(--space-8) 0', color: muted(55), fontSize: 13 }}>

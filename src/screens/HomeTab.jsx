@@ -1,5 +1,5 @@
 import {
-  CATS, HEATMAP_COLORS, HEATMAP_SEED, MONTH_HISTORY, NET_WORTH,
+  HEATMAP_COLORS, HEATMAP_SEED, MONTH_HISTORY, NET_WORTH,
 } from '../data/seed.js';
 import { forPerson, realMonthlyTotal } from '../lib/totals.js';
 import { inr, muted } from '../lib/format.js';
@@ -65,7 +65,7 @@ function SmsBanner({ t }) {
 }
 
 function Overview({ t }) {
-  const topCategories = CATS
+  const topCategories = t.data.categories
     .map((c) => ({ ...c, amount: forPerson(t.totals, c.name, t.person) }))
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 4);
@@ -171,7 +171,7 @@ function Overview({ t }) {
 
 function Trends({ t }) {
   // Category breakdown follows the person selector above it, same as Overview.
-  const categories = CATS
+  const categories = t.data.categories
     .map((c) => ({ ...c, amount: forPerson(t.totals, c.name, t.person) }))
     .sort((a, b) => b.amount - a.amount);
   const catMax = Math.max(...categories.map((c) => c.amount), 1);

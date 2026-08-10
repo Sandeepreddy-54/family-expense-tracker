@@ -37,6 +37,7 @@ export default function ExportScreen({ t }) {
       budgets: t.budgets,
       creditAccounts: t.creditAccounts,
       totals: t.totals,
+      categories: t.data.categories,
       range,
       label,
       youName: t.youName,
@@ -99,7 +100,7 @@ export default function ExportScreen({ t }) {
 
       <div style={{ fontSize: 12, color: muted(60), marginBottom: 'var(--space-3)' }}>
         The CSV above is for reading — a full backup is for restoring everything (transactions, bills,
-        accounts, EMIs, IOUs, budgets) later via Settings → Restore backup, e.g. after switching phones.
+        accounts, EMIs, IOUs, categories, budgets) later via More → Restore backup, e.g. after switching phones.
       </div>
       <button
         type="button"

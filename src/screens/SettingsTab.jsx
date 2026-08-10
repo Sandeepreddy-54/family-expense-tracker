@@ -1,28 +1,70 @@
-import { useState } from 'react';
-import { CATS, NOTIF_TOGGLES } from '../data/seed.js';
+import { NOTIF_TOGGLES } from '../data/seed.js';
 import { inr, muted } from '../lib/format.js';
-import { genSyncCode } from '../lib/sync.js';
-import { Eyebrow, NavCard, Seg, Toggle } from '../components/ui.jsx';
+import { Eyebrow, GridTile, Seg, Toggle } from '../components/ui.jsx';
+
+const ICONS = {
+  categories: (
+    <>
+      <rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2.5" />
+      <rect x="13" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2.5" />
+      <rect x="4" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2.5" />
+      <rect x="13" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2.5" />
+    </>
+  ),
+  budgets: <path d="M5 19V10M12 19V5M19 19v-7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />,
+  bills: (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="12" cy="14" r="1.6" fill="currentColor" />
+    </>
+  ),
+  cards: (
+    <>
+      <rect x="3" y="6" width="18" height="13" rx="2.5" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M3 10.5h18" stroke="currentColor" strokeWidth="2.5" />
+    </>
+  ),
+  loans: (
+    <>
+      <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="16" cy="8" r="3" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M3 20c0-3 2.5-5 5-5s5 2 5 5M11 20c0-3 2.5-5 5-5s5 2 5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </>
+  ),
+  export: (
+    <>
+      <path d="M12 4v11M8 11l4 4 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 19h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </>
+  ),
+  import: (
+    <>
+      <path d="M12 19V8M8 12l4-4 4 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 5h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </>
+  ),
+  restore: (
+    <>
+      <path d="M4 12a8 8 0 1 1 2.5 5.8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <path d="M4 8v4h4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+};
+
+function TileIcon({ name }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">{ICONS[name]}</svg>
+  );
+}
 
 export default function SettingsTab({ t }) {
   const s = t.data.settings;
   const profile = t.data.profile;
-  const [partnerName, setPartnerName] = useState(profile.partnerName || '');
-  const [syncCode, setSyncCode] = useState(profile.syncCode || '');
-  const [syncError, setSyncError] = useState('');
-
-  const connect = () => {
-    if (!partnerName.trim() || !syncCode.trim()) {
-      setSyncError('Enter a name and code to sync.');
-      return;
-    }
-    t.syncPartner({ partnerName, syncCode });
-    setSyncError('');
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-      <h2 style={{ fontSize: 20, margin: 0 }}>Settings</h2>
+      <h2 style={{ fontSize: 20, margin: 0 }}>More</h2>
 
       <div>
         <Eyebrow>Account</Eyebrow>
@@ -36,65 +78,33 @@ export default function SettingsTab({ t }) {
       </div>
 
       <div>
-        <Eyebrow>Partner sync</Eyebrow>
-        <div className="card elev-sm" style={{ gap: 'var(--space-3)' }}>
-          {profile.synced ? (
-            <div className="om-row" style={{ justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>Synced with {profile.partnerName}</div>
-                <div style={{ fontSize: 11, color: muted(55) }}>Code {profile.syncCode}</div>
-              </div>
-              <button type="button" className="btn btn-secondary" onClick={t.unsyncPartner}>Unsync</button>
-            </div>
-          ) : (
-            <>
-              <div style={{ fontSize: 11, color: muted(55) }}>
-                Enter your partner's name and share a code to keep both apps in sync.
-              </div>
-              <div className="field" style={{ margin: 0 }}>
-                <label htmlFor="settings-partner-name">Partner's name</label>
-                <input
-                  id="settings-partner-name"
-                  className="input"
-                  value={partnerName}
-                  onChange={(e) => { setPartnerName(e.target.value); setSyncError(''); }}
-                  placeholder="e.g. Priya"
-                />
-              </div>
-              <div className="field" style={{ margin: 0 }}>
-                <label htmlFor="settings-sync-code">Sync code</label>
-                <div className="om-row" style={{ gap: 8 }}>
-                  <input
-                    id="settings-sync-code"
-                    className="input"
-                    style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.08em' }}
-                    value={syncCode}
-                    onChange={(e) => { setSyncCode(e.target.value.toUpperCase()); setSyncError(''); }}
-                    placeholder="e.g. K3F9QX"
-                    maxLength={8}
-                  />
-                  <button type="button" className="btn btn-secondary" onClick={() => { setSyncCode(genSyncCode()); setSyncError(''); }}>
-                    Generate
-                  </button>
-                </div>
-              </div>
-              {syncError && <div role="alert" style={{ fontSize: 11, color: 'var(--color-accent-700)' }}>{syncError}</div>}
-              <button type="button" className="btn btn-primary btn-block" style={{ marginTop: 0 }} onClick={connect}>
-                Connect
-              </button>
-            </>
-          )}
+        <Eyebrow>SMS access</Eyebrow>
+        <div className="card elev-sm" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{profile.name ? `${profile.name}'s` : 'Your'} Android</div>
+            <div style={{ fontSize: 11, color: muted(55) }}>Reads PhonePe &amp; bank SMS automatically</div>
+          </div>
+          <Toggle on={s.smsAndroid} onClick={() => t.toggleSetting('smsAndroid')} label={`${profile.name ? `${profile.name}'s` : 'Your'} Android SMS access`} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <NavCard title="Budgets" subtitle="Per-category limits & progress" onClick={() => t.setTab('budgets')} />
-        <NavCard title="Bills & reminders" subtitle="Auto-detected recurring bills + your own" onClick={() => t.openScreen('bills')} />
-        <NavCard title="Card EMIs" subtitle={t.monthlyEmiTotal > 0 ? `${t.activeEmis.length} active · ${inr(t.monthlyEmiTotal)}/mo across your cards` : 'Track EMIs on your credit cards'} onClick={() => t.openScreen('emis')} />
-        <NavCard title="Loans & lending" subtitle="EMIs, ROI, and money with friends & family" onClick={() => t.openScreen('loans')} />
-        <NavCard title="Export data" subtitle="Week, month, or a custom range, plus a full backup" onClick={() => t.openScreen('export')} />
-        <NavCard title="Import past messages" subtitle="Paste old SMS to backfill a month or two" onClick={() => t.openScreen('import')} />
-        <NavCard title="Restore backup" subtitle="Bring back a full backup — e.g. after switching phones" onClick={() => t.openScreen('restoreBackup')} />
+      <div>
+        <Eyebrow>Manage</Eyebrow>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-2)' }}>
+          <GridTile title="Categories" subtitle="Add, remove, manage" icon={<TileIcon name="categories" />} onClick={() => t.openScreen('categories')} />
+          <GridTile title="Budgets" subtitle="Per-category limits" icon={<TileIcon name="budgets" />} onClick={() => t.setTab('budgets')} />
+          <GridTile title="Bills & reminders" subtitle="Auto-detected + your own" icon={<TileIcon name="bills" />} onClick={() => t.openScreen('bills')} />
+          <GridTile
+            title="Card EMIs"
+            subtitle={t.monthlyEmiTotal > 0 ? `${t.activeEmis.length} active · ${inr(t.monthlyEmiTotal)}/mo` : 'Track EMIs on your cards'}
+            icon={<TileIcon name="cards" />}
+            onClick={() => t.openScreen('emis')}
+          />
+          <GridTile title="Loans & lending" subtitle="EMIs, ROI & IOUs" icon={<TileIcon name="loans" />} onClick={() => t.openScreen('loans')} />
+          <GridTile title="Export data" subtitle="Week, month, or custom" icon={<TileIcon name="export" />} onClick={() => t.openScreen('export')} />
+          <GridTile title="Import past messages" subtitle="Paste old SMS to backfill" icon={<TileIcon name="import" />} onClick={() => t.openScreen('import')} />
+          <GridTile title="Restore backup" subtitle="After switching phones" icon={<TileIcon name="restore" />} onClick={() => t.openScreen('restoreBackup')} />
+        </div>
       </div>
 
       <div>
@@ -114,27 +124,6 @@ export default function SettingsTab({ t }) {
       </div>
 
       <div>
-        <Eyebrow>Linked accounts</Eyebrow>
-        <div className="card elev-sm" style={{ gap: 'var(--space-3)' }}>
-          <div className="om-row" style={{ justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{profile.name ? `${profile.name}'s` : 'Your'} Android — SMS access</div>
-              <div style={{ fontSize: 11, color: muted(55) }}>Reads PhonePe &amp; bank SMS automatically</div>
-            </div>
-            <Toggle on={s.smsAndroid} onClick={() => t.toggleSetting('smsAndroid')} label={`${profile.name ? `${profile.name}'s` : 'Your'} Android SMS access`} />
-          </div>
-          <div className="hr" style={{ margin: 0 }} />
-          <div className="om-row" style={{ justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{profile.partnerName ? `${profile.partnerName}'s` : "Partner's"} iPhone — SMS forwarding</div>
-              <div style={{ fontSize: 11, color: muted(55) }}>iOS can't read SMS directly — forwards bank texts to a tracked number</div>
-            </div>
-            <Toggle on={s.iphoneForward} onClick={() => t.toggleSetting('iphoneForward')} label={`${profile.partnerName ? `${profile.partnerName}'s` : "Partner's"} iPhone SMS forwarding`} />
-          </div>
-        </div>
-      </div>
-
-      <div>
         <Eyebrow>Notifications</Eyebrow>
         <div className="card elev-sm" style={{ gap: 'var(--space-3)' }}>
           {NOTIF_TOGGLES.map((n) => (
@@ -143,28 +132,6 @@ export default function SettingsTab({ t }) {
               <Toggle small on={s[n.key]} onClick={() => t.toggleSetting(n.key)} label={n.label} />
             </div>
           ))}
-        </div>
-      </div>
-
-      <div>
-        <Eyebrow>Categories</Eyebrow>
-        <div className="card elev-sm" style={{ gap: 0, padding: 'var(--space-2) var(--space-3)' }}>
-          {CATS.map((c) => (
-            <div key={c.name} style={{ padding: 'var(--space-2) 0', borderBottom: '1px solid var(--color-divider)', fontSize: 13 }}>
-              {c.name}
-            </div>
-          ))}
-          <div style={{ padding: 'var(--space-2) 0', fontSize: 13, color: 'var(--color-accent-700)' }}>+ Add category</div>
-        </div>
-      </div>
-
-      <div>
-        <Eyebrow>Household</Eyebrow>
-        <div className="card elev-sm" style={{ gap: 'var(--space-3)' }}>
-          <div className="om-row" style={{ justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 13 }}>Shared with {profile.partnerName || 'partner'}</div>
-            <Toggle on={s.shared} onClick={() => t.toggleSetting('shared')} label={`Shared with ${profile.partnerName || 'partner'}`} />
-          </div>
         </div>
       </div>
 

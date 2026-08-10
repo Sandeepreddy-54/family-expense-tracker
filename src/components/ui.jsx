@@ -102,18 +102,52 @@ export function Toggle({ on, onClick, label, small = false }) {
   );
 }
 
-/** A settings/menu row that pushes a screen. */
-export function NavCard({ title, subtitle, onClick }) {
+/** Square-ish tile in a feature grid — icon, title, optional subtitle. */
+export function GridTile({ title, subtitle, icon, onClick }) {
   return (
-    <button type="button" onClick={onClick} style={{ textAlign: 'left', cursor: 'pointer', border: 'none', padding: 0, background: 'none', font: 'inherit' }}>
-      <div className="card elev-sm" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
-          <div style={{ fontSize: 11, color: muted(55) }}>{subtitle}</div>
-        </div>
-        <Chevron />
+    <button
+      type="button"
+      onClick={onClick}
+      className="card elev-sm"
+      style={{
+        cursor: 'pointer', border: 'none', textAlign: 'left', font: 'inherit', padding: 'var(--space-3)',
+        display: 'flex', flexDirection: 'column', gap: 8, minHeight: 96, justifyContent: 'space-between',
+      }}
+    >
+      <div style={{
+        width: 30, height: 30, borderRadius: 999, background: 'var(--color-accent-100)', color: 'var(--color-accent-800)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}
+      >
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.25 }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 10.5, color: muted(55), marginTop: 2 }}>{subtitle}</div>}
       </div>
     </button>
+  );
+}
+
+/**
+ * A themed yes/no dialog using Organic's dialog-* classes — otherwise unused
+ * in this app, which relied on window.confirm for every prior "are you
+ * sure?" moment. Reserved for prompts that need to show real content (e.g.
+ * details of the specific thing being confirmed against), not simple
+ * irreversible deletes, which keep using window.confirm as before.
+ */
+export function ConfirmDialog({ title, body, confirmLabel = 'Continue', cancelLabel = 'Cancel', onConfirm, onCancel }) {
+  return (
+    <div className="dialog-backdrop" onClick={onCancel}>
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-title" id="confirm-dialog-title">{title}</div>
+        <div className="dialog-body">{body}</div>
+        <div className="dialog-actions">
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>{cancelLabel}</button>
+          <button type="button" className="btn btn-primary" onClick={onConfirm}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
