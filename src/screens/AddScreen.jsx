@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CATS, INCOME_CATS } from '../data/seed.js';
+import { INCOME_CATS } from '../data/seed.js';
 import { Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
 
 export default function AddScreen({ t }) {
@@ -11,7 +11,7 @@ export default function AddScreen({ t }) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
-  const categories = type === 'income' ? INCOME_CATS : CATS;
+  const categories = type === 'income' ? INCOME_CATS : t.data.categories;
   const accountNames = t.data.accounts.map((a) => t.personalizeAccount(a.name));
 
   const save = () => {

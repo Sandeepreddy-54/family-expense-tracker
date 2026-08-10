@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ACCOUNTS_INITIAL, BILLS_INITIAL, BUDGETS_DATA, CARD_EMIS_INITIAL, DEFAULT_OVERALL_BUDGET,
-  DEFAULT_PROFILE, DEFAULT_SETTINGS, IOU_INITIAL, LAST_MONTH, SMS_INITIAL,
-  TODAY, TODAY_ISO, TX_INITIAL, catMeta,
+  ACCOUNTS_INITIAL, BILLS_INITIAL, CARD_EMIS_INITIAL, CATEGORIES_INITIAL, DEFAULT_BUDGETS,
+  DEFAULT_OVERALL_BUDGET, DEFAULT_PROFILE, DEFAULT_SETTINGS, FALLBACK_BUDGET, IOU_INITIAL,
+  LAST_MONTH, SMS_INITIAL, TODAY, TODAY_ISO, TX_INITIAL,
 } from '../data/seed.js';
 import { categoryTotals, monthTotal, realMonthlyTotal } from '../lib/totals.js';
+import { buildCategory, catMeta as catMetaFor } from '../lib/categories.js';
 import { daysUntil, inr, muted, shortDate } from '../lib/format.js';
 import { byDateDesc, groupByDate } from '../lib/dates.js';
 import { deriveEmi } from '../lib/emi.js';
@@ -20,6 +21,7 @@ const freshData = () => ({
   ious: IOU_INITIAL,
   cardEmis: CARD_EMIS_INITIAL,
   accounts: ACCOUNTS_INITIAL,
+  categories: CATEGORIES_INITIAL,
   budgetOverrides: {},
   overallBudget: DEFAULT_OVERALL_BUDGET,
   settings: DEFAULT_SETTINGS,
@@ -82,8 +84,14 @@ export function useTracker() {
     [youName, partnerName],
   );
 
+  // ── derived: categories ────────────────────────────────────────────────────
+  const catMeta = useCallback((name) => catMetaFor(name, data.categories), [data.categories]);
+
   // ── derived: spend ─────────────────────────────────────────────────────────
-  const totals = useMemo(() => categoryTotals(data.transactions), [data.transactions]);
+  const totals = useMemo(
+    () => categoryTotals(data.transactions, data.categories.map((c) => c.name)),
+    [data.transactions, data.categories],
+  );
   const heroTotal = monthTotal(totals, person);
   const lastMonth = LAST_MONTH[person === 'combined' ? 'combined' : person];
   // No baseline yet (fresh household) — there's nothing meaningful to compare
@@ -114,18 +122,18 @@ export function useTracker() {
         canDelete: tx.person === data.currentUser,
       };
     }),
-    [data.transactions, data.currentUser, personalizeAccount],
+    [data.transactions, data.currentUser, personalizeAccount, catMeta],
   );
 
   // ── derived: budgets ───────────────────────────────────────────────────────
   const budgets = useMemo(
-    () => BUDGETS_DATA.map((b) => {
-      const budget = data.budgetOverrides[b.category] ?? b.budget;
-      const t = totals[b.category];
+    () => data.categories.map((c) => {
+      const budget = data.budgetOverrides[c.name] ?? DEFAULT_BUDGETS[c.name] ?? FALLBACK_BUDGET;
+      const t = totals[c.name] || { you: 0, priya: 0, combined: 0 };
       const pct = Math.round((t.combined / budget) * 100);
-      return { ...b, ...catMeta(b.category), budget, spent: t.combined, you: t.you, priya: t.priya, pct };
+      return { ...c, category: c.name, budget, spent: t.combined, you: t.you, priya: t.priya, pct };
     }),
-    [data.budgetOverrides, totals],
+    [data.categories, data.budgetOverrides, totals],
   );
 
   const budgetAlerts = useMemo(
@@ -254,7 +262,7 @@ export function useTracker() {
       });
     }
     return out;
-  }, [data.smsQueue.length, budgetAlerts, upcomingBills]);
+  }, [data.smsQueue.length, budgetAlerts, upcomingBills, catMeta]);
 
   const hasNotifDot = data.smsQueue.length > 0
     || budgetAlerts.length > 0
@@ -389,6 +397,39 @@ export function useTracker() {
     setData((d) => ({ ...d, accounts: d.accounts.filter((a) => a.id !== id) }));
   }, []);
 
+  const addCategory = useCallback((name) => {
+    const clean = (name || '').trim();
+    if (!clean) return { ok: false, error: 'Enter a category name.' };
+    let result = { ok: true };
+    setData((d) => {
+      if (d.categories.some((c) => c.name.toLowerCase() === clean.toLowerCase())) {
+        result = { ok: false, error: 'That category already exists.' };
+        return d;
+      }
+      return { ...d, categories: [...d.categories, buildCategory(clean, d.categories)] };
+    });
+    return result;
+  }, []);
+
+  // How many transactions + bills currently use a category — shown before
+  // deletion so removing one doesn't silently orphan real entries.
+  const categoryUsageCount = useCallback(
+    (name) => data.transactions.filter((tx) => tx.category === name).length
+      + data.bills.filter((b) => b.category === name).length,
+    [data.transactions, data.bills],
+  );
+
+  const deleteCategory = useCallback((name) => {
+    if (name === 'Other') return; // permanent — the reassignment target below
+    setData((d) => ({
+      ...d,
+      categories: d.categories.filter((c) => c.name !== name),
+      transactions: d.transactions.map((tx) => (tx.category === name ? { ...tx, category: 'Other' } : tx)),
+      bills: d.bills.map((b) => (b.category === name ? { ...b, category: 'Other' } : b)),
+      budgetOverrides: Object.fromEntries(Object.entries(d.budgetOverrides).filter(([k]) => k !== name)),
+    }));
+  }, []);
+
   const importSmsBatch = useCallback((text) => {
     // Parsed inside the updater (not from the outer `data` closure) so it
     // reads accounts as of the latest state, same reason confirmSms reads
@@ -436,32 +477,17 @@ export function useTracker() {
     }));
   }, []);
 
-  const login = useCallback(({ name, partnerName = '', syncCode = '' }) => {
+  const login = useCallback(({ name, partnerName = '' }) => {
     if (!name?.trim()) return false;
-    const partner = partnerName.trim();
-    const code = syncCode.trim().toUpperCase();
     setData((d) => ({
       ...d,
-      profile: { ...d.profile, loggedIn: true, name: name.trim(), partnerName: partner, syncCode: code, synced: Boolean(partner && code) },
+      profile: { ...d.profile, loggedIn: true, name: name.trim(), partnerName: partnerName.trim() },
     }));
     return true;
   }, []);
 
   const logout = useCallback(() => {
     setData((d) => ({ ...d, profile: { ...d.profile, loggedIn: false } }));
-  }, []);
-
-  const syncPartner = useCallback(({ partnerName, syncCode }) => {
-    if (!partnerName?.trim() || !syncCode?.trim()) return false;
-    setData((d) => ({
-      ...d,
-      profile: { ...d.profile, partnerName: partnerName.trim(), syncCode: syncCode.trim().toUpperCase(), synced: true },
-    }));
-    return true;
-  }, []);
-
-  const unsyncPartner = useCallback(() => {
-    setData((d) => ({ ...d, profile: { ...d.profile, synced: false } }));
   }, []);
 
   const toggleSetting = useCallback((key) => {
@@ -500,15 +526,16 @@ export function useTracker() {
     emiCardId, emiReturnScreen, openAddEmi,
     // derived
     totals, heroTotal, trendPct, overallSpent, incomeTotal, netTotal, transactions, txGroups,
-    budgets, budgetAlerts, bills, openBills, upcomingBills,
+    budgets, budgetAlerts, bills, openBills, upcomingBills, catMeta,
     accounts, creditAccounts, bankAccounts, cardsCycleSpend, cardsLimit, notifications, hasNotifDot,
     emis, activeEmis, monthlyEmiTotal, emiCardsCount,
     // actions
     addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms, importSmsBatch,
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,
     addCardEmi, markEmiPaid, deleteCardEmi, addAccount, deleteAccount,
+    addCategory, deleteCategory, categoryUsageCount,
     addIou, markIouRepaid, toggleSetting, clearData,
     setCurrentUser: (u) => patch({ currentUser: u }),
-    login, logout, syncPartner, unsyncPartner,
+    login, logout,
   };
 }
