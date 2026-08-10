@@ -38,12 +38,6 @@ const ICONS = {
       <path d="M5 19h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
     </>
   ),
-  import: (
-    <>
-      <path d="M12 19V8M8 12l4-4 4 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M5 5h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-    </>
-  ),
 };
 
 function TileIcon({ name }) {
@@ -96,7 +90,6 @@ export default function SettingsTab({ t }) {
           />
           <GridTile title="Loans & lending" subtitle="EMIs, ROI & IOUs" icon={<TileIcon name="loans" />} onClick={() => t.openScreen('loans')} />
           <GridTile title="Export data" subtitle="Week, month, or custom" icon={<TileIcon name="export" />} onClick={() => t.openScreen('export')} />
-          <GridTile title="Import past messages" subtitle="Paste old SMS to backfill" icon={<TileIcon name="import" />} onClick={() => t.openScreen('import')} />
         </div>
       </div>
 
