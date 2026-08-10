@@ -33,7 +33,15 @@ export default function CardDetailScreen({ t }) {
             <div style={{ fontSize: 12.5, color: muted(55) }}>No transactions on this account yet.</div>
           )}
           {accountTx.map((tx) => (
-            <div key={tx.id} className="om-row" style={{ justifyContent: 'space-between', padding: 'var(--space-2) 0', borderBottom: '1px solid var(--color-divider)' }}>
+            <div
+              key={tx.id}
+              className="om-row"
+              style={{
+                justifyContent: 'space-between', padding: 'var(--space-2)', margin: '0 calc(var(--space-2) * -1)',
+                borderBottom: '1px solid var(--color-divider)', borderRadius: 'var(--radius-sm)',
+                background: tx.isLarge ? 'color-mix(in srgb, var(--color-accent-700) 6%, transparent)' : 'transparent',
+              }}
+            >
               <div className="om-row" style={{ gap: 10 }}>
                 <Badge meta={tx} size={30} font={11} />
                 <div>
@@ -41,7 +49,7 @@ export default function CardDetailScreen({ t }) {
                   <div style={{ fontSize: 11, color: muted(55) }}>{tx.subLabel}</div>
                 </div>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{tx.amountLabel}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: tx.amountColor }}>{tx.amountLabel}</div>
             </div>
           ))}
         </div>
@@ -126,7 +134,15 @@ export default function CardDetailScreen({ t }) {
           <div style={{ fontSize: 12.5, color: muted(55) }}>No transactions on this card yet.</div>
         )}
         {accountTx.map((tx) => (
-          <div key={tx.id} className="om-row" style={{ justifyContent: 'space-between', padding: 'var(--space-2) 0', borderBottom: '1px solid var(--color-divider)' }}>
+          <div
+            key={tx.id}
+            className="om-row"
+            style={{
+              justifyContent: 'space-between', padding: 'var(--space-2)', margin: '0 calc(var(--space-2) * -1)',
+              borderBottom: '1px solid var(--color-divider)', borderRadius: 'var(--radius-sm)',
+              background: tx.isLarge ? 'color-mix(in srgb, var(--color-accent-700) 6%, transparent)' : 'transparent',
+            }}
+          >
             <div className="om-row" style={{ gap: 10 }}>
               <Badge meta={tx} size={30} font={11} />
               <div>
@@ -134,7 +150,7 @@ export default function CardDetailScreen({ t }) {
                 <div style={{ fontSize: 11, color: muted(55) }}>{tx.subLabel}</div>
               </div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{tx.amountLabel}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: tx.amountColor }}>{tx.amountLabel}</div>
           </div>
         ))}
       </div>
