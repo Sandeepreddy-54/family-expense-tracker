@@ -22,6 +22,12 @@ export default function ImportScreen({ t }) {
     <div className="om-sheet">
       <SheetHeader onBack={t.closeScreen} title="Import past messages" />
 
+      <div style={{ textAlign: 'center', marginBottom: 'var(--space-3)' }}>
+        <button type="button" className="btn btn-ghost" style={{ padding: 0, fontSize: 12 }} onClick={() => t.openScreen('add')}>
+          Enter manually instead
+        </button>
+      </div>
+
       <div style={{ fontSize: 12, color: muted(60), marginBottom: 'var(--space-3)', lineHeight: 1.5 }}>
         A one-time way to backfill the last month or two: paste your bank / PhonePe SMS texts below —
         one per message, with a blank line between each. This is a best-effort reader — it guesses
