@@ -37,6 +37,7 @@ import EmisScreen from './screens/EmisScreen.jsx';
 import AddEmiScreen from './screens/AddEmiScreen.jsx';
 import ImportScreen from './screens/ImportScreen.jsx';
 import AddAccountScreen from './screens/AddAccountScreen.jsx';
+import RestoreBackupScreen from './screens/RestoreBackupScreen.jsx';
 import CategoriesScreen from './screens/CategoriesScreen.jsx';
 
 const TABS = {
@@ -59,6 +60,7 @@ const SCREENS = {
   addEmi: AddEmiScreen,
   import: ImportScreen,
   addAccount: AddAccountScreen,
+  restoreBackup: RestoreBackupScreen,
   categories: CategoriesScreen,
 };
 

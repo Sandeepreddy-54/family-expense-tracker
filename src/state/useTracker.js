@@ -512,6 +512,29 @@ export function useTracker() {
     setTab('home');
   }, []);
 
+  // Restores content from a backup produced by lib/backup.js's buildBackup —
+  // replaces activity data + accounts wholesale, same "not touching
+  // login/settings" boundary as clearData, just refilling instead of emptying.
+  const restoreBackup = useCallback((snapshot) => {
+    setData((d) => ({
+      ...d,
+      transactions: snapshot.transactions ?? [],
+      smsQueue: snapshot.smsQueue ?? [],
+      bills: snapshot.bills ?? [],
+      ious: snapshot.ious ?? [],
+      cardEmis: snapshot.cardEmis ?? [],
+      accounts: snapshot.accounts ?? [],
+      // Older backups (taken before categories were user-editable) won't have
+      // this key — fall back to what's already on the device instead of
+      // wiping the category list out.
+      categories: snapshot.categories ?? d.categories,
+      budgetOverrides: snapshot.budgetOverrides ?? {},
+      overallBudget: snapshot.overallBudget ?? d.overallBudget,
+    }));
+    setScreen(null);
+    setTab('home');
+  }, []);
+
   return {
     // raw data
     data,
@@ -534,7 +557,7 @@ export function useTracker() {
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,
     addCardEmi, markEmiPaid, deleteCardEmi, addAccount, deleteAccount,
     addCategory, deleteCategory, categoryUsageCount,
-    addIou, markIouRepaid, toggleSetting, clearData,
+    addIou, markIouRepaid, toggleSetting, clearData, restoreBackup,
     setCurrentUser: (u) => patch({ currentUser: u }),
     login, logout,
   };
