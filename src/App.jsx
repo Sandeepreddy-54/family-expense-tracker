@@ -108,7 +108,7 @@ function TabBar({ t }) {
     <nav className="om-tabbar" aria-label="Main">
       <TabButton id="home" label="Home" active={t.tab === 'home'} onClick={() => t.setTab('home')} />
       <TabButton id="transactions" label="Activity" active={t.tab === 'transactions'} onClick={() => t.setTab('transactions')} />
-      <button type="button" onClick={() => t.openScreen('add')} aria-label="Add entry" style={{ justifyContent: 'center', marginTop: -18 }}>
+      <button type="button" onClick={() => t.openScreen('import')} aria-label="Add entry" style={{ justifyContent: 'center', marginTop: -18 }}>
         <div style={{
           width: 48, height: 48, borderRadius: 999, background: 'var(--color-accent)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)',

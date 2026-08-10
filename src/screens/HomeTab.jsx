@@ -253,7 +253,10 @@ function Trends({ t }) {
 }
 
 export default function HomeTab({ t }) {
-  const greetingName = t.data.currentUser === 'you' ? t.youName : t.partnerName;
+  // Always greet the actual logged-in account holder (matches More →
+  // Account) — "Using app as" only tags who a new transaction belongs to,
+  // it doesn't mean someone else is now using this phone.
+  const greetingName = t.youName;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
