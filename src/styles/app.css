@@ -102,9 +102,7 @@ input[type="number"] { -moz-appearance: textfield; }
 .om-page.is-frameless .db-login { padding-top: 28px; }
 /* Pinned to the top of .om-sheet's own scroll area — without this it was
    plain scrolling content, so Back/Cancel/Done scrolled away with everything
-   else instead of staying reachable. translateZ promotes it to its own
-   compositor layer, which avoids a repaint glitch some Android WebViews show
-   on sticky/backdrop elements during active scroll. */
+   else instead of staying reachable. */
 .om-sheet-head {
   position: sticky;
   top: 0;
@@ -115,7 +113,6 @@ input[type="number"] { -moz-appearance: textfield; }
   padding-top: 60px;
   padding-bottom: var(--space-4);
   background: var(--color-bg);
-  transform: translateZ(0);
 }
 .om-sheet-head h3 { margin: 0; font-size: 16px }
 .om-sheet-action {
@@ -149,10 +146,6 @@ input[type="number"] { -moz-appearance: textfield; }
   border-top: 1px solid var(--color-divider);
   display: flex;
   gap: 2px;
-  /* Own compositor layer — without this some Android WebViews repaint the
-     backdrop-filter blur incorrectly during scroll momentum in the sibling
-     .om-screen, making the tab bar flicker or briefly vanish. */
-  transform: translateZ(0);
 }
 .om-tabbar button {
   flex: 1;
