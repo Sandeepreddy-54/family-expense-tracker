@@ -1,13 +1,24 @@
-import { muted } from '../lib/format.js';
+import { useState } from 'react';
+import { inr, muted } from '../lib/format.js';
 import { TxRow } from '../components/ui.jsx';
 
-const matches = (tx, filter) => {
+const matchesFilter = (tx, filter) => {
   if (filter === 'all') return true;
   if (filter === 'you' || filter === 'priya') return tx.person === filter;
   return tx.source === filter;
 };
 
+const matchesSearch = (tx, query) => {
+  if (!query) return true;
+  const q = query.trim().toLowerCase();
+  return tx.merchant.toLowerCase().includes(q)
+    || tx.category.toLowerCase().includes(q)
+    || tx.account.toLowerCase().includes(q);
+};
+
 export default function TransactionsTab({ t }) {
+  const [search, setSearch] = useState('');
+
   const FILTERS = [
     { key: 'all', label: 'All' },
     { key: 'you', label: 'You' },
@@ -17,12 +28,28 @@ export default function TransactionsTab({ t }) {
   ];
 
   const groups = t.txGroups
-    .map((g) => ({ ...g, items: g.items.filter((tx) => matches(tx, t.txFilter)) }))
+    .map((g) => ({ ...g, items: g.items.filter((tx) => matchesFilter(tx, t.txFilter) && matchesSearch(tx, search)) }))
     .filter((g) => g.items.length > 0);
+
+  const visibleCount = groups.reduce((sum, g) => sum + g.items.length, 0);
+  const total = groups.reduce(
+    (sum, g) => sum + g.items.reduce((s, tx) => s + (tx.type === 'income' ? tx.amount : -tx.amount), 0),
+    0,
+  );
+  const totalUp = total >= 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <h2 style={{ fontSize: 20, margin: 0 }}>Transactions</h2>
+
+      <input
+        className="input"
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search merchant, category, or account"
+        aria-label="Search transactions"
+      />
 
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
         {FILTERS.map((f) => {
@@ -44,8 +71,17 @@ export default function TransactionsTab({ t }) {
         })}
       </div>
 
+      {visibleCount > 0 && (
+        <div className="om-row" style={{ justifyContent: 'space-between', fontSize: 12, color: muted(60) }}>
+          <span>{visibleCount} transaction{visibleCount === 1 ? '' : 's'}</span>
+          <span style={{ fontWeight: 600, color: totalUp ? 'var(--color-accent-2-700)' : 'var(--color-text)' }}>
+            {totalUp ? '+' : '−'}{inr(Math.abs(total))}
+          </span>
+        </div>
+      )}
+
       {groups.length === 0 && (
-        <div style={{ fontSize: 12.5, color: muted(55) }}>Nothing matches this filter yet.</div>
+        <div style={{ fontSize: 12.5, color: muted(55) }}>Nothing matches your search or filter yet.</div>
       )}
 
       {groups.map((grp) => (
