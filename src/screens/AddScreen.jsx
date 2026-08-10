@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CATS, INCOME_CATS, TODAY_ISO } from '../data/seed.js';
+import { INCOME_CATS, TODAY_ISO } from '../data/seed.js';
 import { ConfirmDialog, Eyebrow, Seg, SheetHeader } from '../components/ui.jsx';
 import { findDuplicates } from '../lib/duplicates.js';
 import { inr, shortDate } from '../lib/format.js';
@@ -14,7 +14,7 @@ export default function AddScreen({ t }) {
   const [error, setError] = useState('');
   const [duplicates, setDuplicates] = useState(null);
 
-  const categories = type === 'income' ? INCOME_CATS : CATS;
+  const categories = type === 'income' ? INCOME_CATS : t.data.categories;
   const accountNames = t.data.accounts.map((a) => t.personalizeAccount(a.name));
 
   const commit = (value) => {

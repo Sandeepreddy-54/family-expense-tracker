@@ -102,16 +102,28 @@ export function Toggle({ on, onClick, label, small = false }) {
   );
 }
 
-/** A settings/menu row that pushes a screen. */
-export function NavCard({ title, subtitle, onClick }) {
+/** Square-ish tile in a feature grid — icon, title, optional subtitle. */
+export function GridTile({ title, subtitle, icon, onClick }) {
   return (
-    <button type="button" onClick={onClick} style={{ textAlign: 'left', cursor: 'pointer', border: 'none', padding: 0, background: 'none', font: 'inherit' }}>
-      <div className="card elev-sm" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
-          <div style={{ fontSize: 11, color: muted(55) }}>{subtitle}</div>
-        </div>
-        <Chevron />
+    <button
+      type="button"
+      onClick={onClick}
+      className="card elev-sm"
+      style={{
+        cursor: 'pointer', border: 'none', textAlign: 'left', font: 'inherit', padding: 'var(--space-3)',
+        display: 'flex', flexDirection: 'column', gap: 8, minHeight: 96, justifyContent: 'space-between',
+      }}
+    >
+      <div style={{
+        width: 30, height: 30, borderRadius: 999, background: 'var(--color-accent-100)', color: 'var(--color-accent-800)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}
+      >
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.25 }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 10.5, color: muted(55), marginTop: 2 }}>{subtitle}</div>}
       </div>
     </button>
   );

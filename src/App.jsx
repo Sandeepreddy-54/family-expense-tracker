@@ -37,6 +37,7 @@ import EmisScreen from './screens/EmisScreen.jsx';
 import AddEmiScreen from './screens/AddEmiScreen.jsx';
 import ImportScreen from './screens/ImportScreen.jsx';
 import AddAccountScreen from './screens/AddAccountScreen.jsx';
+import CategoriesScreen from './screens/CategoriesScreen.jsx';
 
 const TABS = {
   home: HomeTab,
@@ -58,6 +59,7 @@ const SCREENS = {
   addEmi: AddEmiScreen,
   import: ImportScreen,
   addAccount: AddAccountScreen,
+  categories: CategoriesScreen,
 };
 
 const ICONS = {
@@ -117,7 +119,7 @@ function TabBar({ t }) {
         </div>
       </button>
       <TabButton id="cards" label="Cards" active={t.tab === 'cards'} onClick={() => t.setTab('cards')} />
-      <TabButton id="more" label="Settings" active={t.tab === 'more'} onClick={() => t.setTab('more')} />
+      <TabButton id="more" label="More" active={t.tab === 'more'} onClick={() => t.setTab('more')} />
     </nav>
   );
 }

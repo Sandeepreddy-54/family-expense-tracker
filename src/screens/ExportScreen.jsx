@@ -36,6 +36,7 @@ export default function ExportScreen({ t }) {
       budgets: t.budgets,
       creditAccounts: t.creditAccounts,
       totals: t.totals,
+      categories: t.data.categories,
       range,
       label,
       youName: t.youName,
