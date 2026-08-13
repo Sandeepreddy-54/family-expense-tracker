@@ -11,6 +11,7 @@ import { byDateDesc, groupByDate } from '../lib/dates.js';
 import { deriveEmi } from '../lib/emi.js';
 import { cycleSpend, lastStatementDate, nextOccurrence } from '../lib/cardCycle.js';
 import { parseSmsBatch } from '../lib/smsParser.js';
+import { buildForecast } from '../lib/forecast.js';
 
 const STORAGE_KEY = 'family-expense-tracker/v1';
 const HIGH_AMOUNT_THRESHOLD = 2000;
@@ -59,6 +60,7 @@ export function useTracker() {
   const [tab, setTab] = useState('home');
   const [screen, setScreen] = useState(null);
   const [txFilter, setTxFilter] = useState('all');
+  const [txSort, setTxSort] = useState('date');
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [smsIndex, setSmsIndex] = useState(0);
   const [emiCardId, setEmiCardId] = useState(null);
@@ -226,6 +228,20 @@ export function useTracker() {
   const activeEmis = emis.filter((e) => !e.completed);
   const monthlyEmiTotal = activeEmis.reduce((s, e) => s + e.emiAmount, 0);
   const emiCardsCount = new Set(activeEmis.map((e) => e.cardId)).size;
+
+  // ── derived: next month forecast ───────────────────────────────────────────
+  // Committed spend for next month, pulled from card EMIs still running,
+  // loan EMIs, currently unpaid bills, and merchants that keep recurring in
+  // transaction history (see lib/forecast.js for the detection rules).
+  const forecast = useMemo(
+    () => buildForecast({
+      transactions: data.transactions,
+      activeEmis,
+      bills: openBills,
+      todayIso: TODAY_ISO,
+    }),
+    [data.transactions, activeEmis, openBills],
+  );
 
   // ── derived: notifications ─────────────────────────────────────────────────
   const notifications = useMemo(() => {
@@ -551,13 +567,13 @@ export function useTracker() {
     personLabel: person === 'combined' ? 'Combined' : person === 'you' ? 'You' : partnerName,
     // navigation
     tab, setTab, screen, openScreen, closeScreen,
-    txFilter, setTxFilter, smsIndex, setSmsIndex, openAccount, detailAccount,
+    txFilter, setTxFilter, txSort, setTxSort, smsIndex, setSmsIndex, openAccount, detailAccount,
     emiCardId, emiReturnScreen, openAddEmi,
     // derived
     totals, heroTotal, trendPct, overallSpent, incomeTotal, netTotal, transactions, txGroups,
     budgets, budgetAlerts, bills, openBills, upcomingBills, catMeta,
     accounts, creditAccounts, bankAccounts, cardsCycleSpend, cardsLimit, notifications, hasNotifDot,
-    emis, activeEmis, monthlyEmiTotal, emiCardsCount,
+    emis, activeEmis, monthlyEmiTotal, emiCardsCount, forecast,
     // actions
     addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms, importSmsBatch,
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,

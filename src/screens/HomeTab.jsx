@@ -64,6 +64,31 @@ function SmsBanner({ t }) {
   );
 }
 
+function ForecastBanner({ t }) {
+  const { total } = t.forecast;
+  if (total <= 0) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => t.openScreen('forecast')}
+      className="card elev-sm"
+      style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        cursor: 'pointer', border: 'none', textAlign: 'left', font: 'inherit', width: '100%',
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>Next month, already committed</div>
+        <div style={{ fontSize: 11, color: muted(55) }}>EMIs, loans, bills &amp; repeat expenses</div>
+      </div>
+      <div className="om-row" style={{ gap: 6, flexShrink: 0 }}>
+        <div style={{ fontFamily: 'var(--font-heading)', fontSize: 16 }}>{inr(total)}</div>
+        <Chevron />
+      </div>
+    </button>
+  );
+}
+
 function Overview({ t }) {
   const topCategories = t.data.categories
     .map((c) => ({ ...c, amount: forPerson(t.totals, c.name, t.person) }))
@@ -80,6 +105,7 @@ function Overview({ t }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <Hero t={t} />
       <SmsBanner t={t} />
+      <ForecastBanner t={t} />
 
       {t.budgetAlerts.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

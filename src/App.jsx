@@ -39,6 +39,7 @@ import ImportScreen from './screens/ImportScreen.jsx';
 import AddAccountScreen from './screens/AddAccountScreen.jsx';
 import RestoreBackupScreen from './screens/RestoreBackupScreen.jsx';
 import CategoriesScreen from './screens/CategoriesScreen.jsx';
+import ForecastScreen from './screens/ForecastScreen.jsx';
 
 const TABS = {
   home: HomeTab,
@@ -62,6 +63,7 @@ const SCREENS = {
   addAccount: AddAccountScreen,
   restoreBackup: RestoreBackupScreen,
   categories: CategoriesScreen,
+  forecast: ForecastScreen,
 };
 
 const ICONS = {
