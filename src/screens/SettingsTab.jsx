@@ -44,6 +44,13 @@ const ICONS = {
       <path d="M4 8v4h4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
+  forecast: (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M8 14l2.5 2.5L16 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </>
+  ),
 };
 
 function TileIcon({ name }) {
@@ -95,6 +102,12 @@ export default function SettingsTab({ t }) {
             onClick={() => t.openScreen('emis')}
           />
           <GridTile title="Loans & lending" subtitle="EMIs, ROI & IOUs" icon={<TileIcon name="loans" />} onClick={() => t.openScreen('loans')} />
+          <GridTile
+            title="Next month forecast"
+            subtitle={t.forecast.total > 0 ? `${inr(t.forecast.total)} expected` : 'EMIs, loans, bills & repeats'}
+            icon={<TileIcon name="forecast" />}
+            onClick={() => t.openScreen('forecast')}
+          />
           <GridTile title="Export data" subtitle="Week, month, or custom" icon={<TileIcon name="export" />} onClick={() => t.openScreen('export')} />
           <GridTile title="Restore backup" subtitle="After switching phones" icon={<TileIcon name="restore" />} onClick={() => t.openScreen('restoreBackup')} />
         </div>

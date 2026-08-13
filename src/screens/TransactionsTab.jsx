@@ -16,6 +16,22 @@ const matchesSearch = (tx, query) => {
     || tx.account.toLowerCase().includes(q);
 };
 
+function Pill({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      style={{
+        flexShrink: 0, padding: '6px 14px', borderRadius: 999, fontSize: 12,
+        border: '1px solid var(--color-divider)', cursor: 'pointer', font: 'inherit',
+        background: active ? 'var(--color-accent)' : 'var(--color-surface)',
+        color: active ? 'var(--color-bg)' : 'var(--color-text)',
+      }}
+    >{children}</button>
+  );
+}
+
 export default function TransactionsTab({ t }) {
   const [search, setSearch] = useState('');
 
@@ -27,9 +43,25 @@ export default function TransactionsTab({ t }) {
     { key: 'manual', label: 'Manual' },
   ];
 
-  const groups = t.txGroups
-    .map((g) => ({ ...g, items: g.items.filter((tx) => matchesFilter(tx, t.txFilter) && matchesSearch(tx, search)) }))
-    .filter((g) => g.items.length > 0);
+  const SORTS = [
+    { key: 'date', label: 'Newest' },
+    { key: 'amountDesc', label: 'Amount ↓' },
+    { key: 'amountAsc', label: 'Amount ↑' },
+  ];
+
+  // Date sort keeps the existing "grouped by day" layout; amount sort flattens
+  // everything into one list ranked by amount, since ascending/descending
+  // amount doesn't map onto date sections.
+  const groups = t.txSort === 'date'
+    ? t.txGroups
+      .map((g) => ({ ...g, items: g.items.filter((tx) => matchesFilter(tx, t.txFilter) && matchesSearch(tx, search)) }))
+      .filter((g) => g.items.length > 0)
+    : [{
+      label: t.txSort === 'amountDesc' ? 'Highest amount first' : 'Lowest amount first',
+      items: t.transactions
+        .filter((tx) => matchesFilter(tx, t.txFilter) && matchesSearch(tx, search))
+        .sort((a, b) => (t.txSort === 'amountDesc' ? b.amount - a.amount : a.amount - b.amount)),
+    }].filter((g) => g.items.length > 0);
 
   const visibleCount = groups.reduce((sum, g) => sum + g.items.length, 0);
   const total = groups.reduce(
@@ -52,23 +84,15 @@ export default function TransactionsTab({ t }) {
       />
 
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-        {FILTERS.map((f) => {
-          const active = t.txFilter === f.key;
-          return (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => t.setTxFilter(f.key)}
-              aria-pressed={active}
-              style={{
-                flexShrink: 0, padding: '6px 14px', borderRadius: 999, fontSize: 12,
-                border: '1px solid var(--color-divider)', cursor: 'pointer', font: 'inherit',
-                background: active ? 'var(--color-accent)' : 'var(--color-surface)',
-                color: active ? 'var(--color-bg)' : 'var(--color-text)',
-              }}
-            >{f.label}</button>
-          );
-        })}
+        {FILTERS.map((f) => (
+          <Pill key={f.key} active={t.txFilter === f.key} onClick={() => t.setTxFilter(f.key)}>{f.label}</Pill>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+        {SORTS.map((s) => (
+          <Pill key={s.key} active={t.txSort === s.key} onClick={() => t.setTxSort(s.key)}>{s.label}</Pill>
+        ))}
       </div>
 
       {visibleCount > 0 && (
