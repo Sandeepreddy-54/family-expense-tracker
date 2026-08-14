@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ACCOUNTS_INITIAL, BILLS_INITIAL, CARD_EMIS_INITIAL, CATEGORIES_INITIAL, DEFAULT_BUDGETS,
-  DEFAULT_OVERALL_BUDGET, DEFAULT_PROFILE, DEFAULT_SETTINGS, FALLBACK_BUDGET, IOU_INITIAL,
-  LAST_MONTH, SMS_INITIAL, TODAY, TODAY_ISO, TX_INITIAL,
+  DEFAULT_OVERALL_BUDGET, DEFAULT_PROFILE, DEFAULT_SETTINGS, FALLBACK_BUDGET, FORECAST_EXTRAS_INITIAL,
+  IOU_INITIAL, LAST_MONTH, LOANS_INITIAL, SMS_INITIAL, TODAY, TODAY_ISO, TX_INITIAL,
 } from '../data/seed.js';
 import { categoryTotals, monthTotal, realMonthlyTotal } from '../lib/totals.js';
 import { buildCategory, catMeta as catMetaFor } from '../lib/categories.js';
@@ -22,6 +22,8 @@ const freshData = () => ({
   bills: BILLS_INITIAL,
   ious: IOU_INITIAL,
   cardEmis: CARD_EMIS_INITIAL,
+  loans: LOANS_INITIAL,
+  forecastExtras: FORECAST_EXTRAS_INITIAL,
   accounts: ACCOUNTS_INITIAL,
   categories: CATEGORIES_INITIAL,
   budgetOverrides: {},
@@ -231,17 +233,22 @@ export function useTracker() {
 
   // ── derived: next month forecast ───────────────────────────────────────────
   // Committed spend for next month, pulled from card EMIs still running,
-  // loan EMIs, currently unpaid bills, and merchants that keep recurring in
-  // transaction history (see lib/forecast.js for the detection rules).
+  // loan EMIs, currently unpaid bills, merchants that keep recurring in
+  // transaction history, and anything added by hand (see lib/forecast.js).
   const forecast = useMemo(
     () => buildForecast({
       transactions: data.transactions,
       activeEmis,
       bills: openBills,
+      loans: data.loans,
+      extras: data.forecastExtras,
       todayIso: TODAY_ISO,
     }),
-    [data.transactions, activeEmis, openBills],
+    [data.transactions, activeEmis, openBills, data.loans, data.forecastExtras],
   );
+  // Committed next month vs. what's actually come in this month — the
+  // headline "can I still spend/save" number the Home hero surfaces.
+  const canSpend = incomeTotal - forecast.total;
 
   // ── derived: notifications ─────────────────────────────────────────────────
   const notifications = useMemo(() => {
@@ -370,6 +377,23 @@ export function useTracker() {
     setData((d) => ({ ...d, bills: d.bills.filter((b) => b.id !== id) }));
   }, []);
 
+  // One-off items added by hand on the Next month forecast screen — things
+  // that aren't a card EMI, loan, bill, or detected repeat merchant, but the
+  // user already knows are coming (an annual fee, a booked trip, school fees).
+  const addForecastItem = useCallback(({ label, amount }) => {
+    const v = parseFloat(amount);
+    if (!label?.trim() || !v || v <= 0) return false;
+    setData((d) => ({
+      ...d,
+      forecastExtras: [...d.forecastExtras, { id: Date.now(), label: label.trim(), amount: v }],
+    }));
+    return true;
+  }, []);
+
+  const deleteForecastItem = useCallback((id) => {
+    setData((d) => ({ ...d, forecastExtras: d.forecastExtras.filter((x) => x.id !== id) }));
+  }, []);
+
   const addCardEmi = useCallback(({ cardId, item, amount, tenureMonths, paidMonths = 0, startDate }) => {
     const total = parseFloat(amount);
     const months = parseInt(tenureMonths, 10);
@@ -482,6 +506,26 @@ export function useTracker() {
     return count;
   }, []);
 
+  const addLoan = useCallback(({ name, principal, outstanding, roi, emi, tenureLeft, dueDate }) => {
+    const p = parseFloat(principal);
+    const o = parseFloat(outstanding);
+    const r = parseFloat(roi);
+    const e = parseFloat(emi);
+    if (!name?.trim() || !p || p <= 0 || !o || o <= 0 || !r || !e || e <= 0) return false;
+    setData((d) => ({
+      ...d,
+      loans: [...d.loans, {
+        id: Date.now(), name: name.trim(), principal: p, outstanding: Math.min(o, p), roi: r, emi: e,
+        tenureLeft: (tenureLeft || '').trim(), dueDate: (dueDate || '').trim(),
+      }],
+    }));
+    return true;
+  }, []);
+
+  const deleteLoan = useCallback((id) => {
+    setData((d) => ({ ...d, loans: d.loans.filter((l) => l.id !== id) }));
+  }, []);
+
   const addIou = useCallback(({ direction, person: who, amount, note }) => {
     const v = parseFloat(amount);
     if (!v || !who) return false;
@@ -524,11 +568,11 @@ export function useTracker() {
   }, []);
 
   const clearData = useCallback(() => {
-    if (!window.confirm('Clear all transactions, SMS queue, bills, IOUs, and card EMIs? This can\'t be undone.')) return;
+    if (!window.confirm('Clear all transactions, SMS queue, bills, IOUs, card EMIs, loans, and forecast items? This can\'t be undone.')) return;
     // Only the activity data — login, partner sync, settings and budgets are
     // untouched, so this doesn't sign anyone out.
     setData((d) => ({
-      ...d, transactions: [], smsQueue: [], bills: [], ious: [], cardEmis: [],
+      ...d, transactions: [], smsQueue: [], bills: [], ious: [], cardEmis: [], loans: [], forecastExtras: [],
     }));
     setScreen(null);
     setTab('home');
@@ -545,6 +589,8 @@ export function useTracker() {
       bills: snapshot.bills ?? [],
       ious: snapshot.ious ?? [],
       cardEmis: snapshot.cardEmis ?? [],
+      loans: snapshot.loans ?? [],
+      forecastExtras: snapshot.forecastExtras ?? [],
       accounts: snapshot.accounts ?? [],
       // Older backups (taken before categories were user-editable) won't have
       // this key — fall back to what's already on the device instead of
@@ -573,12 +619,13 @@ export function useTracker() {
     totals, heroTotal, trendPct, overallSpent, incomeTotal, netTotal, transactions, txGroups,
     budgets, budgetAlerts, bills, openBills, upcomingBills, catMeta,
     accounts, creditAccounts, bankAccounts, cardsCycleSpend, cardsLimit, notifications, hasNotifDot,
-    emis, activeEmis, monthlyEmiTotal, emiCardsCount, forecast,
+    emis, activeEmis, monthlyEmiTotal, emiCardsCount, forecast, canSpend,
     // actions
     addTransaction, deleteTransaction, updateSmsItem, confirmSms, discardSms, importSmsBatch,
     setBudget, setOverallBudget, addBill, markBillPaid, deleteBill,
     addCardEmi, markEmiPaid, deleteCardEmi, addAccount, deleteAccount,
     addCategory, deleteCategory, categoryUsageCount,
+    addLoan, deleteLoan, addForecastItem, deleteForecastItem,
     addIou, markIouRepaid, toggleSetting, clearData, restoreBackup,
     setCurrentUser: (u) => patch({ currentUser: u }),
     login, logout,

@@ -100,7 +100,8 @@ export default function ExportScreen({ t }) {
 
       <div style={{ fontSize: 12, color: muted(60), marginBottom: 'var(--space-3)' }}>
         The CSV above is for reading — a full backup is for restoring everything (transactions, bills,
-        accounts, EMIs, IOUs, categories, budgets) later via More → Restore backup, e.g. after switching phones.
+        accounts, EMIs, loans, IOUs, categories, budgets) later via More → Restore backup, e.g. after
+        switching phones.
       </div>
       <button
         type="button"

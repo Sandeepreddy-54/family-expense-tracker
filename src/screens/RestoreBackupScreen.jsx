@@ -30,8 +30,8 @@ export default function RestoreBackupScreen({ t }) {
     const when = pending.summary.exportedAt ? new Date(pending.summary.exportedAt).toLocaleDateString() : 'an unknown date';
     const msg = `Restore this backup from ${when}?\n\n`
       + `${pending.summary.transactions} transactions, ${pending.summary.bills} bills, ${pending.summary.accounts} accounts, `
-      + `${pending.summary.cardEmis} EMIs, ${pending.summary.ious} IOUs, ${pending.summary.categories} categories.\n\n`
-      + 'This replaces your current transactions, bills, accounts, EMIs, IOUs, categories and budgets. '
+      + `${pending.summary.cardEmis} EMIs, ${pending.summary.loans} loans, ${pending.summary.ious} IOUs, ${pending.summary.categories} categories.\n\n`
+      + 'This replaces your current transactions, bills, accounts, EMIs, loans, IOUs, categories and budgets. '
       + "It won't touch your login or settings.";
     if (!window.confirm(msg)) return;
     t.restoreBackup(pending.backup.data);
@@ -43,8 +43,8 @@ export default function RestoreBackupScreen({ t }) {
 
       <div style={{ fontSize: 12, color: muted(60), marginBottom: 'var(--space-4)' }}>
         Pick a backup file from More → Export data → "Download full backup." Restoring replaces your
-        current transactions, bills, accounts, EMIs, IOUs, categories and budgets — it won't touch your
-        login or settings.
+        current transactions, bills, accounts, EMIs, loans, IOUs, categories and budgets — it won't touch
+        your login or settings.
       </div>
 
       <input type="file" accept="application/json,.json" onChange={onFile} style={{ marginBottom: 'var(--space-4)' }} />
@@ -62,7 +62,8 @@ export default function RestoreBackupScreen({ t }) {
           </div>
           <div style={{ fontSize: 12, color: muted(60) }}>
             {pending.summary.transactions} transactions · {pending.summary.bills} bills · {pending.summary.accounts} accounts
-            {' '}· {pending.summary.cardEmis} EMIs · {pending.summary.ious} IOUs · {pending.summary.categories} categories
+            {' '}· {pending.summary.cardEmis} EMIs · {pending.summary.loans} loans · {pending.summary.ious} IOUs
+            {' '}· {pending.summary.categories} categories
           </div>
           <button type="button" onClick={restore} className="btn btn-primary btn-block" style={{ marginTop: 'var(--space-2)' }}>
             Restore this backup

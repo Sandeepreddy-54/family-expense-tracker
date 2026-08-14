@@ -7,6 +7,7 @@ import { Badge, Bar, Chevron, SectionHeading, Seg } from '../components/ui.jsx';
 
 function Hero({ t }) {
   const netUp = t.netTotal >= 0;
+  const canSpendUp = t.canSpend >= 0;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
       <div className="card elev-md" style={{ background: 'var(--color-accent)', color: 'var(--color-bg)', gap: 'var(--space-2)' }}>
@@ -30,6 +31,30 @@ function Hero({ t }) {
           <div className="card-kicker">Net</div>
           <div style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: netUp ? 'var(--color-accent-2-700)' : 'var(--color-accent-700)' }}>
             {netUp ? '+' : '−'}{inr(Math.abs(t.netTotal))}
+          </div>
+        </div>
+      </div>
+
+      {/* Money in, minus what's already committed for next month (EMIs, loans,
+          bills, detected repeats, anything added by hand) — the "is it
+          actually safe to spend this" number, not just this month's totals. */}
+      <div className="om-row" style={{ gap: 'var(--space-2)' }}>
+        <button
+          type="button"
+          onClick={() => t.openScreen('forecast')}
+          className="card elev-sm"
+          style={{ flex: 1, gap: 2, cursor: 'pointer', border: 'none', textAlign: 'left', font: 'inherit' }}
+        >
+          <div className="om-row" style={{ justifyContent: 'space-between', gap: 4 }}>
+            <div className="card-kicker">Next month, committed</div>
+            <Chevron opacity={0.3} />
+          </div>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: 18 }}>{inr(t.forecast.total)}</div>
+        </button>
+        <div className="card elev-sm" style={{ flex: 1, gap: 2 }}>
+          <div className="card-kicker" style={{ color: canSpendUp ? 'var(--color-accent-2-700)' : 'var(--color-accent-700)' }}>Can spend</div>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: canSpendUp ? 'var(--color-accent-2-700)' : 'var(--color-accent-700)' }}>
+            {canSpendUp ? '' : '−'}{inr(Math.abs(t.canSpend))}
           </div>
         </div>
       </div>
@@ -64,31 +89,6 @@ function SmsBanner({ t }) {
   );
 }
 
-function ForecastBanner({ t }) {
-  const { total } = t.forecast;
-  if (total <= 0) return null;
-  return (
-    <button
-      type="button"
-      onClick={() => t.openScreen('forecast')}
-      className="card elev-sm"
-      style={{
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-        cursor: 'pointer', border: 'none', textAlign: 'left', font: 'inherit', width: '100%',
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600 }}>Next month, already committed</div>
-        <div style={{ fontSize: 11, color: muted(55) }}>EMIs, loans, bills &amp; repeat expenses</div>
-      </div>
-      <div className="om-row" style={{ gap: 6, flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-heading)', fontSize: 16 }}>{inr(total)}</div>
-        <Chevron />
-      </div>
-    </button>
-  );
-}
-
 function Overview({ t }) {
   const topCategories = t.data.categories
     .map((c) => ({ ...c, amount: forPerson(t.totals, c.name, t.person) }))
@@ -105,7 +105,6 @@ function Overview({ t }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <Hero t={t} />
       <SmsBanner t={t} />
-      <ForecastBanner t={t} />
 
       {t.budgetAlerts.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
