@@ -84,16 +84,23 @@ export const TX_INITIAL = [];
 // (or from a pasted backfill), not from fixtures.
 export const SMS_INITIAL = [];
 
-export const LOANS_DATA = [
-  { id: 'home', name: 'Home Loan — SBI', principal: 2500000, outstanding: 1870000, roi: 8.6, emi: 21500, tenureLeft: '9 yrs 4 mo', dueDate: 'Aug 5' },
-  { id: 'car', name: 'Car Loan — HDFC', principal: 600000, outstanding: 210000, roi: 9.25, emi: 12800, tenureLeft: '1 yr 6 mo', dueDate: 'Aug 7' },
-];
+// Starts empty — add real loans (home, car, personal...) from the Loans &
+// lending screen. Same shape the old fixed demo data used: `tenureLeft` and
+// `dueDate` are free-text display labels, not parsed dates — this app
+// doesn't do amortization math, just tracks what you tell it.
+export const LOANS_INITIAL = [];
 
 // Starts empty — add real IOUs from the Loans & lending screen.
 export const IOU_INITIAL = [];
 
 // Starts empty — add real bills from the Bills & reminders screen.
 export const BILLS_INITIAL = [];
+
+// Starts empty — one-off items you know are coming next month (annual fees,
+// school terms, a trip you've already booked) that wouldn't otherwise show up
+// as a card EMI, loan, bill, or a merchant with repeat history. Added from
+// the Next month forecast screen.
+export const FORECAST_EXTRAS_INITIAL = [];
 
 // Historical months for the Trends bar chart. The final entry is replaced with
 // the live month-to-date total at render time; any other month starts at zero

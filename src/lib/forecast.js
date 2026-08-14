@@ -1,5 +1,3 @@
-import { LOANS_DATA } from '../data/seed.js';
-
 /**
  * Whether an already-active card EMI still owes a payment next calendar
  * month. Most active EMIs obviously do (more than one instalment left); the
@@ -53,17 +51,20 @@ export function detectRecurringExpenses(transactions, minMonths = 2) {
 
 /**
  * Everything already committed for next month: card EMIs still running,
- * loan EMIs, bills currently unpaid, and merchants detected as recurring
- * from transaction history. `bills` should be the enriched, still-open bill
- * list (t.openBills) so each item already carries a due-date label.
+ * loan EMIs, bills currently unpaid, merchants detected as recurring from
+ * transaction history, and one-off items added by hand. `bills` should be
+ * the enriched, still-open bill list (t.openBills) so each item already
+ * carries a due-date label. `loans` and `extras` are the raw user-entered
+ * lists (data.loans / data.forecastExtras) — both start empty until the
+ * user adds their own, same as every other real list in this app.
  */
-export function buildForecast({ transactions, activeEmis, bills, todayIso }) {
+export function buildForecast({ transactions, activeEmis, bills, loans, extras, todayIso }) {
   const emiItems = activeEmis
     .filter((e) => emiContinuesNextMonth(e, todayIso))
     .map((e) => ({ key: `emi-${e.id}`, label: e.item, sublabel: e.cardName, amount: e.emiAmount }));
 
-  const loanItems = LOANS_DATA.map((l) => ({
-    key: `loan-${l.id}`, label: l.name, sublabel: `${l.roi}% ROI · ${l.tenureLeft} left`, amount: l.emi,
+  const loanItems = loans.map((l) => ({
+    key: `loan-${l.id}`, label: l.name, sublabel: `${l.roi}% ROI${l.tenureLeft ? ` · ${l.tenureLeft} left` : ''}`, amount: l.emi,
   }));
 
   const billItems = bills.map((b) => ({
@@ -74,11 +75,16 @@ export function buildForecast({ transactions, activeEmis, bills, todayIso }) {
     key: r.key, label: r.merchant, sublabel: `${r.category} · seen ${r.months} month${r.months === 1 ? '' : 's'}`, amount: r.amount,
   }));
 
+  const extraItems = extras.map((x) => ({
+    key: `extra-${x.id}`, id: x.id, label: x.label, sublabel: 'Added by you', amount: x.amount, removable: true,
+  }));
+
   const groups = [
     { key: 'emi', label: 'Card EMIs', items: emiItems },
     { key: 'loans', label: 'Loan EMIs', items: loanItems },
     { key: 'bills', label: 'Bills & subscriptions', items: billItems },
     { key: 'recurring', label: 'Repeated expenses (detected)', items: recurringItems },
+    { key: 'extras', label: 'Added by you', items: extraItems },
   ].filter((g) => g.items.length > 0);
 
   const total = groups.reduce((sum, g) => sum + g.items.reduce((s, i) => s + i.amount, 0), 0);
