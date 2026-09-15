@@ -135,6 +135,22 @@ export default function App() {
   const Screen = t.screen ? SCREENS[t.screen] : null;
   const loggedIn = t.data.profile.loggedIn;
 
+  // Android's Share sheet (see manifest.json's share_target) lands here as a
+  // plain GET navigation with the shared SMS text in the query string —
+  // route it straight through the existing paste/parse flow instead of
+  // making the user open Import and paste it by hand.
+  useEffect(() => {
+    if (!loggedIn) return;
+    const params = new URLSearchParams(window.location.search);
+    const shared = [params.get('title'), params.get('text')].filter(Boolean).join('\n');
+    if (!shared) return;
+    window.history.replaceState(null, '', window.location.pathname);
+    if (t.importSmsBatch(shared) > 0) {
+      t.setSmsIndex(0);
+      t.openScreen('sms');
+    }
+  }, [loggedIn]);
+
   return (
     <div className={`om-page${isMobile ? ' is-frameless' : ''}`}>
       {!isMobile && (
